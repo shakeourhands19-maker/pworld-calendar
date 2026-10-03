@@ -303,6 +303,49 @@ else:
         "開店画像は見つかりませんでした。"
     )
 
+# index.jsonを作成
+import json
+
+index_file = os.path.join(DATA_DIR, "index.json")
+
+index_data = {}
+
+for date_name in sorted(os.listdir(DATA_DIR)):
+
+    date_dir = os.path.join(DATA_DIR, date_name)
+
+    if not os.path.isdir(date_dir):
+        continue
+
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_name):
+        continue
+
+    files = []
+
+    for filename in sorted(os.listdir(date_dir)):
+
+        if filename.lower().endswith(
+            (".jpg", ".jpeg", ".png")
+        ):
+            files.append(filename)
+
+    if files:
+        index_data[date_name] = files
+
+with open(
+    index_file,
+    "w",
+    encoding="utf-8"
+) as f:
+
+    json.dump(
+        index_data,
+        f,
+        ensure_ascii=False,
+        indent=2
+    )
+
+print("index.jsonを更新しました。")
 
 print()
 print(f"保存先: {today_dir}")
