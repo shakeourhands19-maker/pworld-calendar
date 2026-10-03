@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from urllib.parse import urljoin
 
 import requests
@@ -16,7 +17,7 @@ from PIL import Image, ImageEnhance, ImageFilter
 
 PAGE_URL = "https://www.p-world.co.jp/hokkaido/playland-happy-t.htm"
 
-TESSERACT = r"D:\tesseract OCR\tesseract.exe"
+TESSERACT = "tesseract"
 
 IMAGE_DIR = "downloaded_images"
 DATA_DIR = "data"
@@ -99,7 +100,7 @@ print()
 # 今日の日付
 # =========================================================
 
-today = datetime.now().strftime("%Y-%m-%d")
+today = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d")
 
 today_dir = os.path.join(DATA_DIR, today)
 
