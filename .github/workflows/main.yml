@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: "30 0 * * *"
 
+permissions:
+  contents: write
+
 jobs:
   collect:
     runs-on: ubuntu-latest
