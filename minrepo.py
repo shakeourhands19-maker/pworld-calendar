@@ -26,7 +26,7 @@ DATA_DIR = "minrepo_data"
 EXCLUDED_FILE = "excluded_urls.json"
 
 # 0 = 全履歴
-MAX_NEW_DAYS = 0
+MAX_NEW_DAYS = 3
 
 # 待機時間
 PAGE_WAIT = 5
