@@ -570,7 +570,8 @@ def fetch_report(page, url):
             page.content(),
             "html.parser",
         )
-
+        print("  HTML文字数:", len(page.content()))
+        print("  URL:", page.url)
         # 店舗確認
         if not is_target_store(soup):
             print("  → 別店舗判定")
