@@ -3,7 +3,7 @@ name: P-WORLD daily collection
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 21 * * *"
+    - cron: "0 0 * * *"
 
 permissions:
   contents: write
@@ -28,16 +28,28 @@ jobs:
 
       - name: Install Python packages
         run: |
-          pip install requests beautifulsoup4 pillow
+          pip install requests beautifulsoup4 pillow playwright
 
-      - name: Run collector
+      - name: Install Playwright Chromium
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Run P-WORLD collector
         run: |
           python daily_pworld.py
 
-      - name: Save collected images
+      - name: Run Minrepo collector
+        run: |
+          python minrepo.py
+
+      - name: Save collected data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
-          git diff --cached --quiet || git commit -m "Add daily P-WORLD opening images"
+
+          git add data minrepo_data excluded_urls.json
+
+          git diff --cached --quiet || git commit -m "Update daily P-WORLD and Minrepo data"
+
           git push
