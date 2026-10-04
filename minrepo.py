@@ -188,8 +188,6 @@ def collect_report_urls(page):
             total_this_page += 1
 
             # ------------------------------------------------
-            # ★重要
-            #
             # 「10/3(土)」のように日付だけのリンクだけ採用
             #
             # 「10/3(土) アミューズイチゴ」
@@ -316,6 +314,57 @@ def load_existing_dates():
             )
 
     return dates
+
+
+# ============================================================
+# index.json生成
+# ============================================================
+
+def save_index():
+
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+    dates = []
+
+    for filename in os.listdir(DATA_DIR):
+
+        if not filename.endswith(".json"):
+            continue
+
+        if filename == "index.json":
+            continue
+
+        if not re.match(
+            r"^\d{4}-\d{2}-\d{2}\.json$",
+            filename,
+        ):
+            continue
+
+        dates.append(filename[:-5])
+
+    dates.sort()
+
+    index_path = os.path.join(
+        DATA_DIR,
+        "index.json",
+    )
+
+    with open(
+        index_path,
+        "w",
+        encoding="utf-8",
+    ) as f:
+
+        json.dump(
+            dates,
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    print(
+        f"index.json 更新: {len(dates)}日分"
+    )
 
 
 # ============================================================
@@ -570,13 +619,28 @@ def fetch_report(page, url):
             page.content(),
             "html.parser",
         )
-       
+
         # 店舗確認
         if not is_target_store(soup):
+
             print("  → 別店舗判定")
-            print("  title:", soup.title.get_text(" ", strip=True) if soup.title else "(なし)")
-            print("  店舗名あり:", STORE_NAME in soup.get_text(" ", strip=True))
-            return {"status":"other_store"}
+            print(
+                "  title:",
+                soup.title.get_text(" ", strip=True)
+                if soup.title
+                else "(なし)"
+            )
+            print(
+                "  店舗名あり:",
+                STORE_NAME in soup.get_text(
+                    " ",
+                    strip=True,
+                )
+            )
+
+            return {
+                "status": "other_store"
+            }
 
         # データ抽出
         overall = extract_overall(soup)
@@ -629,12 +693,12 @@ def main():
     with sync_playwright() as p:
 
         browser = p.chromium.launch(
-          headless=True,
-          args=[
-              "--disable-blink-features=AutomationControlled",
-              "--no-sandbox",
-              "--disable-dev-shm-usage",
-          ],
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+            ],
         )
 
         page = browser.new_page(
@@ -853,6 +917,12 @@ def main():
             )
 
             browser.close()
+
+    # ========================================================
+    # index.json更新
+    # ========================================================
+
+    save_index()
 
     # ========================================================
     # 結果
