@@ -573,10 +573,10 @@ def fetch_report(page, url):
 
         # 店舗確認
         if not is_target_store(soup):
-    print("  → 別店舗判定")
-    print("  title:", soup.title.get_text(" ", strip=True) if soup.title else "(なし)")
-    print("  店舗名あり:", STORE_NAME in soup.get_text(" ", strip=True))
-    return {"status":"other_store"}
+            print("  → 別店舗判定")
+            print("  title:", soup.title.get_text(" ", strip=True) if soup.title else "(なし)")
+            print("  店舗名あり:", STORE_NAME in soup.get_text(" ", strip=True))
+            return {"status":"other_store"}
 
         # データ抽出
         overall = extract_overall(soup)
