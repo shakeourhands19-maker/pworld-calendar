@@ -32,10 +32,16 @@ HEADERS = {
     "Referer": "https://www.google.com/"
 }
 
-# 開店画像として判定
-KEYWORDS = ["開店", "OPEN"]
+# =========================================================
+# 取得対象画像として判定
+# =========================================================
+KEYWORDS = [
+    "開店",
+    "OPEN",
+    "時差解放"
+]
 
-# 開店画像でも除外する文字
+# 取得対象画像でも除外する文字
 EXCLUDE_KEYWORDS = [
     "抽選開始",
     "抽選への参加"
@@ -58,8 +64,15 @@ LAYOUT_THRESHOLD = 18
 # フォルダ準備
 # =========================================================
 
-os.makedirs(IMAGE_DIR, exist_ok=True)
-os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(
+    IMAGE_DIR,
+    exist_ok=True
+)
+
+os.makedirs(
+    DATA_DIR,
+    exist_ok=True
+)
 
 
 # =========================================================
@@ -75,10 +88,14 @@ def create_layout_signature(image_path):
     全体的なレイアウトの違いを判定しやすくする。
     """
 
-    img = Image.open(image_path).convert("L")
+    img = Image.open(
+        image_path
+    ).convert("L")
 
     # アスペクト比を保ったまま縮小
-    img.thumbnail(LAYOUT_IMAGE_SIZE)
+    img.thumbnail(
+        LAYOUT_IMAGE_SIZE
+    )
 
     # 64x64のキャンバスを作る
     canvas = Image.new(
@@ -88,11 +105,13 @@ def create_layout_signature(image_path):
     )
 
     x = (
-        LAYOUT_IMAGE_SIZE[0] - img.width
+        LAYOUT_IMAGE_SIZE[0]
+        - img.width
     ) // 2
 
     y = (
-        LAYOUT_IMAGE_SIZE[1] - img.height
+        LAYOUT_IMAGE_SIZE[1]
+        - img.height
     ) // 2
 
     canvas.paste(
@@ -106,9 +125,14 @@ def create_layout_signature(image_path):
     ).enhance(1.5)
 
     # 0～1に変換
-    pixels = list(canvas.getdata())
+    pixels = list(
+        canvas.getdata()
+    )
 
-    average = sum(pixels) / len(pixels)
+    average = (
+        sum(pixels)
+        / len(pixels)
+    )
 
     # 平均値との差を特徴量にする
     signature = [
@@ -132,6 +156,7 @@ def calculate_layout_distance(
     """
 
     if len(signature1) != len(signature2):
+
         return 999
 
     total = 0
@@ -140,10 +165,14 @@ def calculate_layout_distance(
         signature1,
         signature2
     ):
-        total += abs(a - b)
+
+        total += abs(
+            a - b
+        )
 
     return (
-        total / len(signature1)
+        total
+        / len(signature1)
     ) * 100
 
 
@@ -156,7 +185,9 @@ layout_index_file = os.path.join(
     "layout_index.json"
 )
 
-if os.path.exists(layout_index_file):
+if os.path.exists(
+    layout_index_file
+):
 
     try:
 
@@ -181,7 +212,9 @@ else:
 # P-WORLDページ取得
 # =========================================================
 
-print("P-WORLDページを取得しています...")
+print(
+    "P-WORLDページを取得しています..."
+)
 
 response = requests.get(
     PAGE_URL,
@@ -196,7 +229,10 @@ soup = BeautifulSoup(
     "html.parser"
 )
 
-print("ページ取得成功")
+print(
+    "ページ取得成功"
+)
+
 print()
 
 
@@ -230,8 +266,10 @@ for img in soup.find_all("img"):
 
 
 print(
-    f"告知画像を {len(image_urls)} 枚発見しました。"
+    f"告知画像を "
+    f"{len(image_urls)} 枚発見しました。"
 )
+
 print()
 
 
@@ -256,6 +294,7 @@ os.makedirs(
 print(
     f"保存先: {today_dir}"
 )
+
 print()
 
 
@@ -403,7 +442,7 @@ for index, image_url in enumerate(
 
 
         # -------------------------------------------------
-        # 開店判定
+        # 対象画像判定
         # -------------------------------------------------
 
         matched = []
@@ -420,11 +459,11 @@ for index, image_url in enumerate(
         if matched:
 
             print(
-                f"★ 開店画像 "
+                f"★ 対象画像 "
                 f"（{', '.join(matched)}）"
             )
 
-            # 開店画像として保存
+            # 対象画像として保存
             destination = os.path.join(
                 today_dir,
                 filename
@@ -477,9 +516,18 @@ for index, image_url in enumerate(
 # =========================================================
 
 print()
-print("=" * 60)
-print("本日の判定結果")
-print("=" * 60)
+
+print(
+    "=" * 60
+)
+
+print(
+    "本日の判定結果"
+)
+
+print(
+    "=" * 60
+)
 
 if found:
 
@@ -492,7 +540,7 @@ if found:
 else:
 
     print(
-        "開店画像は見つかりませんでした。"
+        "対象画像は見つかりませんでした。"
     )
 
 
@@ -575,9 +623,18 @@ print(
 # =========================================================
 
 print()
-print("=" * 60)
-print("基本レイアウト判定")
-print("=" * 60)
+
+print(
+    "=" * 60
+)
+
+print(
+    "基本レイアウト判定"
+)
+
+print(
+    "=" * 60
+)
 
 
 # ---------------------------------------------------------
@@ -666,7 +723,10 @@ for image_info in all_images:
     # 既存レイアウトとの比較
     # ---------------------------------------------
 
-    for layout_id, layout_info in layout_groups.items():
+    for (
+        layout_id,
+        layout_info
+    ) in layout_groups.items():
 
         reference_signature = (
             layout_info["signature"]
@@ -752,7 +812,10 @@ for image_info in all_images:
 
 output_layout_data = {}
 
-for layout_id, layout_info in layout_groups.items():
+for (
+    layout_id,
+    layout_info
+) in layout_groups.items():
 
     output_layout_data[
         layout_id
@@ -776,9 +839,11 @@ with open(
 
 
 print()
+
 print(
-    f"layout_index.jsonを更新しました。"
+    "layout_index.jsonを更新しました。"
 )
+
 print(
     f"検出したレイアウト数: "
     f"{len(output_layout_data)}"
@@ -790,10 +855,13 @@ print(
 # =========================================================
 
 print()
+
 print(
     f"保存先: {today_dir}"
 )
+
 print()
+
 print(
     "完了しました！"
 )
