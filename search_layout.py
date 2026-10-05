@@ -168,6 +168,40 @@ def ensure_representative_images(layout_data):
 
 
 # ============================================================
+# 代表画像を開く
+# ============================================================
+
+def open_layout_representative(layout_id, layout_data):
+    if layout_id not in layout_data:
+        print()
+        print(f"{layout_id} は登録されていません。")
+        return
+
+    representative = os.path.abspath(
+        os.path.join(LAYOUT_DIR, layout_id + ".jpg")
+    )
+
+    if not os.path.exists(representative):
+        print()
+        print(f"{layout_id} の代表画像が見つかりません。")
+        print("先に代表画像を作成してください。")
+        return
+
+    print()
+    print("=" * 60)
+    print(f"{layout_id} 代表画像")
+    print("=" * 60)
+    print(f"画像: {representative}")
+
+    try:
+        os.startfile(representative)
+        print("画像を開きました。")
+    except Exception as e:
+        print()
+        print(f"画像を開けませんでした: {e}")
+
+
+# ============================================================
 # レイアウト一覧
 # ============================================================
 
