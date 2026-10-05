@@ -28,7 +28,7 @@ DATA_DIR = "data"
 
 
 # ============================================================
-# OCR対象キーワード
+# 採用キーワード
 # ============================================================
 
 KEYWORDS = [
@@ -38,12 +38,17 @@ KEYWORDS = [
 
 
 # ============================================================
-# 明確な除外キーワード
+# 除外キーワード
+#
+# ここに入っている文字がOCR結果に含まれていた場合、
+# その画像は除外する。
+#
+# 「時差開放」専用の判定は行わない。
 # ============================================================
 
 EXCLUDE_KEYWORDS = [
     "抽選開始",
-    "抽選への参加"
+    "抽選への参加",
 ]
 
 
@@ -66,7 +71,7 @@ HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/154.0.0.0 Safari/537.36"
     ),
-    "Referer": "https://www.google.com/"
+    "Referer": "https://www.google.com/",
 }
 
 
@@ -74,9 +79,15 @@ HEADERS = {
 # フォルダ作成
 # ============================================================
 
-os.makedirs(IMAGE_DIR, exist_ok=True)
+os.makedirs(
+    IMAGE_DIR,
+    exist_ok=True
+)
 
-os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(
+    DATA_DIR,
+    exist_ok=True
+)
 
 
 # ============================================================
@@ -87,11 +98,23 @@ def create_layout_signature(image_path):
 
     try:
 
-        image = Image.open(image_path).convert("L")
+        image = Image.open(
+            image_path
+        ).convert("L")
+
+
+        # ----------------------------------------------------
+        # サムネイル化
+        # ----------------------------------------------------
 
         image.thumbnail(
             LAYOUT_IMAGE_SIZE
         )
+
+
+        # ----------------------------------------------------
+        # 64×64の白背景に中央配置
+        # ----------------------------------------------------
 
         canvas = Image.new(
             "L",
@@ -114,10 +137,19 @@ def create_layout_signature(image_path):
             (x, y)
         )
 
-        # コントラストを少し強調
+
+        # ----------------------------------------------------
+        # コントラスト強調
+        # ----------------------------------------------------
+
         canvas = ImageEnhance.Contrast(
             canvas
         ).enhance(1.5)
+
+
+        # ----------------------------------------------------
+        # ピクセル取得
+        # ----------------------------------------------------
 
         pixels = list(
             canvas.get_flattened_data()
@@ -126,7 +158,11 @@ def create_layout_signature(image_path):
         if not pixels:
             return None
 
+
+        # ----------------------------------------------------
         # 平均値で正規化
+        # ----------------------------------------------------
+
         average = sum(pixels) / len(pixels)
 
         signature = [
@@ -138,6 +174,7 @@ def create_layout_signature(image_path):
         ]
 
         return signature
+
 
     except Exception as e:
 
@@ -167,15 +204,15 @@ def calculate_layout_distance(
     if len(signature1) != len(signature2):
         return 999999
 
+
     difference = sum(
-        abs(
-            a - b
-        )
+        abs(a - b)
         for a, b in zip(
             signature1,
             signature2
         )
     ) / len(signature1)
+
 
     return difference
 
@@ -192,13 +229,15 @@ def create_ocr_images(
         image_path
     )[0]
 
+
     image = Image.open(
         image_path
     ).convert("L")
 
-    # --------------------------------------------------------
+
+    # ========================================================
     # 3倍に拡大
-    # --------------------------------------------------------
+    # ========================================================
 
     width, height = image.size
 
@@ -228,6 +267,7 @@ def create_ocr_images(
     image_normal = image_normal.filter(
         ImageFilter.SHARPEN
     )
+
 
     normal_path = (
         base_name
@@ -262,6 +302,7 @@ def create_ocr_images(
         ImageFilter.SHARPEN
     )
 
+
     contrast_path = (
         base_name
         + "_ocr_contrast.png"
@@ -289,6 +330,7 @@ def create_ocr_images(
         lambda p:
         255 if p > threshold else 0
     )
+
 
     binary_path = (
         base_name
@@ -318,6 +360,7 @@ def create_ocr_images(
         255 if p > threshold_strong else 0
     )
 
+
     binary_strong_path = (
         base_name
         + "_ocr_binary_strong.png"
@@ -332,15 +375,11 @@ def create_ocr_images(
     )
 
 
-    # ========================================================
-    # OCR画像一覧を返す
-    # ========================================================
-
     return ocr_images
 
 
 # ============================================================
-# OCR実行
+# Tesseract単体実行
 # ============================================================
 
 def run_single_ocr(
@@ -357,16 +396,17 @@ def run_single_ocr(
                 "-l",
                 "jpn+eng",
                 "--psm",
-                "6"
+                "6",
             ],
             capture_output=True,
             text=True,
             encoding="utf-8",
             errors="ignore",
-            timeout=15
+            timeout=15,
         )
 
         return result.stdout or ""
+
 
     except Exception as e:
 
@@ -377,6 +417,10 @@ def run_single_ocr(
 
         return ""
 
+
+# ============================================================
+# OCR実行
+# ============================================================
 
 def run_ocr(
     image_path
@@ -391,6 +435,11 @@ def run_ocr(
         )
 
         results = []
+
+
+        # ----------------------------------------------------
+        # 4パターンOCR
+        # ----------------------------------------------------
 
         for ocr_image in ocr_images:
 
@@ -446,14 +495,18 @@ def run_ocr(
 
                     pass
 
+
 # ============================================================
 # OCR文字の簡易正規化
 # ============================================================
 
-def normalize_ocr_text(text):
+def normalize_ocr_text(
+    text
+):
 
     if not text:
         return ""
+
 
     text = text.replace(
         "\r",
@@ -475,6 +528,7 @@ def normalize_ocr_text(text):
         ""
     )
 
+
     return text.lower()
 
 
@@ -486,6 +540,7 @@ print(
     "P-WORLDページを取得しています..."
 )
 
+
 try:
 
     response = requests.get(
@@ -495,6 +550,7 @@ try:
     )
 
     response.raise_for_status()
+
 
 except Exception as e:
 
@@ -526,6 +582,7 @@ soup = BeautifulSoup(
 
 image_urls = []
 
+
 for img in soup.find_all(
     "img"
 ):
@@ -536,15 +593,21 @@ for img in soup.find_all(
         or img.get("data-original")
     )
 
+
     if not src:
         continue
+
 
     full_url = urljoin(
         PAGE_URL,
         src
     )
 
-    # P-WORLDの告知画像を対象
+
+    # --------------------------------------------------------
+    # P-WORLDの画像を対象
+    # --------------------------------------------------------
+
     if (
         "img_warehouse" in full_url
         or "img" in full_url.lower()
@@ -573,10 +636,12 @@ today = datetime.now().strftime(
     "%Y-%m-%d"
 )
 
+
 today_dir = os.path.join(
     DATA_DIR,
     today
 )
+
 
 os.makedirs(
     today_dir,
@@ -603,21 +668,28 @@ for i, image_url in enumerate(
     start=1
 ):
 
-    # --------------------------------------------------------
+
+    # ========================================================
     # 拡張子判定
-    # --------------------------------------------------------
+    # ========================================================
 
     extension = ".jpg"
 
     lower_url = image_url.lower()
 
+
     if ".png" in lower_url:
+
         extension = ".png"
 
+
     elif ".gif" in lower_url:
+
         extension = ".gif"
 
+
     elif ".webp" in lower_url:
+
         extension = ".webp"
 
 
@@ -626,15 +698,16 @@ for i, image_url in enumerate(
         + extension
     )
 
+
     downloaded_path = os.path.join(
         IMAGE_DIR,
         filename
     )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # ダウンロード
-    # --------------------------------------------------------
+    # ========================================================
 
     try:
 
@@ -646,6 +719,7 @@ for i, image_url in enumerate(
 
         image_response.raise_for_status()
 
+
         with open(
             downloaded_path,
             "wb"
@@ -654,6 +728,7 @@ for i, image_url in enumerate(
             f.write(
                 image_response.content
             )
+
 
     except Exception as e:
 
@@ -668,27 +743,30 @@ for i, image_url in enumerate(
         continue
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # OCR
-    # --------------------------------------------------------
+    # ========================================================
 
     ocr_text = run_ocr(
         downloaded_path
     )
+
 
     normalized_text = normalize_ocr_text(
         ocr_text
     )
 
 
-    # --------------------------------------------------------
-    # OCR結果をログに表示
-    # --------------------------------------------------------
+    # ========================================================
+    # OCR結果表示
+    # ========================================================
 
     print()
+
     print(
         f"----- OCR結果: {filename} -----"
     )
+
 
     if ocr_text.strip():
 
@@ -696,11 +774,13 @@ for i, image_url in enumerate(
             ocr_text.strip()
         )
 
+
     else:
 
         print(
             "(OCR結果なし)"
         )
+
 
     print(
         "--------------------------------"
@@ -709,41 +789,29 @@ for i, image_url in enumerate(
 
     # ========================================================
     # 除外判定
+    #
+    # ※ここではEXCLUDE_KEYWORDSだけを見る
+    #
+    # ※「時差開放」
+    # ※「時差開放＋抽選」
+    # などの特別判定は行わない。
     # ========================================================
 
     exclude_hits = []
 
-    # --------------------------------------------------------
-    # 除外キーワード判定
-    # --------------------------------------------------------
 
     for keyword in EXCLUDE_KEYWORDS:
 
         if keyword.lower() in normalized_text:
 
-            exclude_hits.append(keyword)
+            exclude_hits.append(
+                keyword
+            )
 
 
-    # --------------------------------------------------------
-    # 「時差開放」＋「抽選」は除外
-    #
-    # ※「時差開放」単独では除外しない
-    # ※「時差開放」自体をOCR判定の対象にはしない
-    # --------------------------------------------------------
-
-    if (
-        "時差開放" in normalized_text
-        and "抽選" in normalized_text
-    ):
-
-        exclude_hits.append(
-            "時差開放＋抽選"
-        )
-
-
-    # --------------------------------------------------------
+    # ========================================================
     # 除外
-    # --------------------------------------------------------
+    # ========================================================
 
     if exclude_hits:
 
@@ -765,19 +833,18 @@ for i, image_url in enumerate(
 
     matched_keywords = []
 
-    # --------------------------------------------------------
-    # 採用キーワード判定
-    # --------------------------------------------------------
 
     for keyword in KEYWORDS:
 
         if keyword.lower() in normalized_text:
 
-            matched_keywords.append(keyword)
+            matched_keywords.append(
+                keyword
+            )
 
 
     # ========================================================
-    # 採用 / 該当なし
+    # 採用
     # ========================================================
 
     if matched_keywords:
@@ -787,12 +854,17 @@ for i, image_url in enumerate(
             filename
         )
 
+
         shutil.copy2(
             downloaded_path,
             destination
         )
 
-        matched_files.append(filename)
+
+        matched_files.append(
+            filename
+        )
+
 
         print()
 
@@ -802,6 +874,11 @@ for i, image_url in enumerate(
             f"{', '.join(matched_keywords)}"
             f"）"
         )
+
+
+    # ========================================================
+    # 該当なし
+    # ========================================================
 
     else:
 
@@ -839,11 +916,13 @@ if matched_files:
         f"{len(matched_files)} 枚"
     )
 
+
     for filename in matched_files:
 
         print(
             f"  {filename}"
         )
+
 
 else:
 
@@ -884,11 +963,12 @@ layout_index_path = os.path.join(
 )
 
 
-# ------------------------------------------------------------
-# layout_index.jsonの既存データ
-# ------------------------------------------------------------
+# ============================================================
+# 既存layout_index.json読み込み
+# ============================================================
 
 layout_data = {}
+
 
 if os.path.exists(
     layout_index_path
@@ -906,22 +986,23 @@ if os.path.exists(
                 f
             )
 
+
     except Exception:
 
         layout_data = {}
 
 
-# ------------------------------------------------------------
-# 既存画像を全部収集
-# ------------------------------------------------------------
+# ============================================================
+# data以下の画像を全部収集
+# ============================================================
 
 all_images = []
+
 
 for root, dirs, files in os.walk(
     DATA_DIR
 ):
 
-    # data直下のjsonは除外
     for filename in files:
 
         if not filename.lower().endswith(
@@ -930,20 +1011,23 @@ for root, dirs, files in os.walk(
                 ".jpeg",
                 ".png",
                 ".gif",
-                ".webp"
+                ".webp",
             )
         ):
             continue
+
 
         full_path = os.path.join(
             root,
             filename
         )
 
+
         relative_path = os.path.relpath(
             full_path,
             DATA_DIR
         )
+
 
         all_images.append(
             (
@@ -953,11 +1037,12 @@ for root, dirs, files in os.walk(
         )
 
 
-# ------------------------------------------------------------
-# レイアウトグループ
-# ------------------------------------------------------------
+# ============================================================
+# レイアウトグループ作成
+# ============================================================
 
 layout_groups = []
+
 
 for relative_path, full_path in all_images:
 
@@ -965,7 +1050,9 @@ for relative_path, full_path in all_images:
         full_path
     )
 
+
     if signature is None:
+
         continue
 
 
@@ -974,9 +1061,9 @@ for relative_path, full_path in all_images:
     matched_distance = None
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # 既存レイアウトと比較
-    # --------------------------------------------------------
+    # ========================================================
 
     for layout in layout_groups:
 
@@ -985,17 +1072,19 @@ for relative_path, full_path in all_images:
             layout["signature"]
         )
 
+
         if distance <= LAYOUT_THRESHOLD:
 
             matched_layout = layout
+
             matched_distance = distance
 
             break
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # 同一レイアウト
-    # --------------------------------------------------------
+    # ========================================================
 
     if matched_layout:
 
@@ -1005,6 +1094,7 @@ for relative_path, full_path in all_images:
             relative_path
         )
 
+
         print(
             f"同一レイアウト: "
             f"{relative_path} → "
@@ -1013,9 +1103,9 @@ for relative_path, full_path in all_images:
         )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # 新規レイアウト
-    # --------------------------------------------------------
+    # ========================================================
 
     else:
 
@@ -1024,17 +1114,24 @@ for relative_path, full_path in all_images:
             f"{len(layout_groups) + 1:03d}"
         )
 
+
         new_layout = {
+
             "id": layout_id,
+
             "signature": signature,
+
             "images": [
                 relative_path
             ]
+
         }
+
 
         layout_groups.append(
             new_layout
         )
+
 
         print(
             f"新規レイアウト: "
@@ -1049,12 +1146,15 @@ for relative_path, full_path in all_images:
 
 output_layout_data = {}
 
+
 for layout in layout_groups:
 
     output_layout_data[
         layout["id"]
     ] = {
+
         "images": layout["images"]
+
     }
 
 
@@ -1077,6 +1177,7 @@ print()
 print(
     "layout_index.jsonを更新しました。"
 )
+
 
 print(
     f"検出したレイアウト数: "
