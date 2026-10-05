@@ -681,6 +681,7 @@ def main():
         print("2 : 指定した画像を全レイアウトと比較")
         print("3 : 今日の画像を全レイアウトと比較")
         print("4 : 日付から基本レイアウトを検索")
+        print("5 : レイアウトIDから使用履歴を検索")
         print("0 : 終了")
         print()
 
@@ -713,10 +714,13 @@ def main():
         elif choice == "4":
             search_layout_by_date(layout_data)
 
+        elif choice == "5":
+            search_layout_history(layout_data)
+
         else:
             print()
             print(
-                "1、2、3、4、0 のいずれかを入力してください。"
+                "1、2、3、4、5、0 のいずれかを入力してください。"
             )
 
 
