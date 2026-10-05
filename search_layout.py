@@ -659,6 +659,56 @@ def search_layout_history(layout_data):
 
 
 # ============================================================
+# 使用回数ランキング
+# ============================================================
+
+def show_layout_ranking(layout_data):
+    print()
+    print("=" * 60)
+    print("基本レイアウト使用回数ランキング")
+    print("=" * 60)
+
+    ranking = []
+
+    for layout_id, layout_info in layout_data.items():
+        images = layout_info.get("images", [])
+        dates = [
+            image_info.get("date", "")
+            for image_info in images
+            if isinstance(image_info, dict)
+        ]
+        dates = [date for date in dates if date]
+
+        ranking.append({
+            "layout_id": layout_id,
+            "count": len(images),
+            "first_date": min(dates) if dates else "-",
+            "last_date": max(dates) if dates else "-"
+        })
+
+    ranking.sort(
+        key=lambda item: (-item["count"], item["layout_id"])
+    )
+
+    if not ranking:
+        print("登録されているレイアウトはありません。")
+        return
+
+    print()
+    print("順位  レイアウト      使用回数  初回使用      最終使用")
+    print("-" * 60)
+
+    for rank, item in enumerate(ranking, start=1):
+        print(
+            f"{rank:>2}位  "
+            f"{item['layout_id']:<14}"
+            f"{item['count']:>4}回    "
+            f"{item['first_date']}  "
+            f"{item['last_date']}"
+        )
+
+
+# ============================================================
 # メイン
 # ============================================================
 
