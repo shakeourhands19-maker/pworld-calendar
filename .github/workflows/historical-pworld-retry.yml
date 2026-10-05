@@ -3,13 +3,17 @@ on:
   workflow_dispatch:
     inputs:
       start_year:
-        description: "画像保存履歴の開始年"
+        description: "ページ履歴の開始年"
         required: true
         default: "2024"
       end_year:
-        description: "画像保存履歴の終了年"
+        description: "ページ履歴の終了年"
         required: true
         default: "2026"
+      max_snapshots:
+        description: "調査するページスナップショット数"
+        required: true
+        default: "300"
 permissions:
   contents: read
 jobs:
@@ -23,14 +27,18 @@ jobs:
         with:
           python-version: "3.12"
       - name: 依存パッケージ
-        run: pip install requests
-      - name: 発掘済みURLを再調査
+        run: pip install requests beautifulsoup4
+      - name: ページ履歴から画像URLを再収集
         env:
           START_YEAR: ${{ inputs.start_year }}
           END_YEAR: ${{ inputs.end_year }}
-        run: |
-          test -f historical_probe/index.json
-          python historical_pworld_retry.py
+          MAX_SNAPSHOTS: ${{ inputs.max_snapshots }}
+        run: python historical_pworld.py
+      - name: 画像URLごとのWayback履歴を再調査
+        env:
+          START_YEAR: ${{ inputs.start_year }}
+          END_YEAR: ${{ inputs.end_year }}
+        run: python historical_pworld_retry.py
       - name: 再発掘結果を保存
         uses: actions/upload-artifact@v4
         with:
