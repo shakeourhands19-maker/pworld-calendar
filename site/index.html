@@ -120,7 +120,7 @@ function renderLayoutList(){
  });
  document.getElementById('layoutList').innerHTML=sorted.map(x=>{
    const d=layoutDates(x);
-   return '<button class="layout-card" onclick="openLayout(\\''+x.id+'\\')"><img src="'+esc(x.representative)+'" alt=""><div class="layout-meta"><strong>'+x.count+'回使用</strong>最終使用 '+esc(d.latest)+'</div></button>';
+   return '<button class="layout-card" onclick="openLayout(\''+x.id+'\')"><img src="'+esc(x.representative)+'" alt=""><div class="layout-meta"><strong>'+x.count+'回使用</strong>最終使用 '+esc(d.latest)+'</div></button>';
  }).join('')||'<p class="small">まだレイアウトデータがありません。</p>';
 }
 function searchOCR(){const q=document.getElementById('ocrSearchInput').value.trim().toLowerCase();const view=document.getElementById('ocrView');if(!q){view.innerHTML='';return}const hits=Object.entries(ocrIndex).filter(([k,v])=>String(v.text||'').toLowerCase().includes(q));if(!hits.length){view.innerHTML='<div class="card"><p class="small">「'+esc(q)+'」を含むOCRデータはありません。</p></div>';return}view.innerHTML='<div class="card"><h2>OCR検索結果</h2>'+hits.map(([key,v])=>'<div class="search-result"><button onclick="openLayoutImage(\''+key.split('/')[0]+'\')"><img src="'+esc(v.url)+'" alt=""><div class="image-date">'+esc(key.split('/')[0])+' / '+esc(key.split('/')[1])+'</div></button></div>').join('')+'</div>'}
