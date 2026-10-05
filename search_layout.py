@@ -3,7 +3,7 @@ import json
 import shutil
 from datetime import datetime
 
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageFilter
 
 
 # ============================================================
@@ -819,11 +819,152 @@ def browse_layout_images(layout_data):
         print("画像ファイルが見つかりません。")
         return
 
+    print()
+    print("1 : 画像を開く")
+    print("2 : OCRで告知内容を見る")
+    print("3 : 画像を開いてOCRも見る")
+    print("0 : 戻る")
+
     try:
-        os.startfile(image_path)
-        print("画像を開きました。")
+        action = input("番号: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        return
+
+    if action == "0":
+        return
+
+    if action in ("2", "3"):
+        show_history_image_content(
+            image_path,
+            date,
+            filename
+        )
+
+    if action in ("1", "3"):
+        try:
+            os.startfile(image_path)
+            print("画像を開きました。")
+        except Exception as e:
+            print(f"画像を開けませんでした: {e}")
+
+    if action not in ("1", "2", "3"):
+        print("1、2、3、0 のいずれかを入力してください。")
+
+
+# ============================================================
+# 履歴画像のOCR
+# ============================================================
+
+def run_history_ocr(image_path):
+    try:
+        image = Image.open(image_path).convert("L")
+
+        width, height = image.size
+        image = image.resize(
+            (width * 3, height * 3),
+            Image.Resampling.LANCZOS
+        )
+
+        ocr_images = []
+
+        image_normal = ImageEnhance.Contrast(
+            image.copy()
+        ).enhance(2.0)
+        image_normal = image_normal.filter(ImageFilter.SHARPEN)
+        ocr_images.append(image_normal)
+
+        image_contrast = ImageEnhance.Contrast(
+            image.copy()
+        ).enhance(3.0)
+        image_contrast = image_contrast.filter(ImageFilter.SHARPEN)
+        image_contrast = image_contrast.filter(ImageFilter.SHARPEN)
+        ocr_images.append(image_contrast)
+
+        image_binary = image.copy().point(
+            lambda p: 255 if p > 180 else 0
+        )
+        ocr_images.append(image_binary)
+
+        image_binary_strong = image.copy().point(
+            lambda p: 255 if p > 210 else 0
+        )
+        ocr_images.append(image_binary_strong)
+
+        results = []
+
+        for index, ocr_image in enumerate(ocr_images, start=1):
+            temp_path = os.path.join(
+                LAYOUT_DIR,
+                f"_history_ocr_{index}.png"
+            )
+
+            try:
+                ocr_image.save(temp_path)
+
+                import subprocess
+
+                result = subprocess.run(
+                    [
+                        "tesseract",
+                        temp_path,
+                        "stdout",
+                        "-l",
+                        "jpn+eng",
+                        "--psm",
+                        "6",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="ignore",
+                    timeout=15,
+                )
+
+                text = result.stdout or ""
+
+                if text.strip():
+                    results.append(text.strip())
+
+            except Exception as e:
+                print(f"OCRエラー: {e}")
+
+            finally:
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except Exception:
+                        pass
+
+        return "\n\n".join(results)
+
     except Exception as e:
-        print(f"画像を開けませんでした: {e}")
+        print(f"OCR処理エラー: {e}")
+        return ""
+
+
+def show_history_image_content(image_path, date, filename):
+    print()
+    print("=" * 60)
+    print("過去の告知内容")
+    print("=" * 60)
+    print(f"日付: {date}")
+    print(f"画像: {filename}")
+    print()
+    print("OCRを実行しています...")
+
+    ocr_text = run_history_ocr(image_path)
+
+    print()
+    print("-" * 60)
+
+    if ocr_text.strip():
+        print(ocr_text)
+    else:
+        print("(OCR結果なし)")
+
+    print("-" * 60)
+
+
 
 
 # ============================================================
