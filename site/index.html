@@ -76,15 +76,31 @@ function changeMonth(diff){calendarMonth.setMonth(calendarMonth.getMonth()+diff)
 function changeYear(diff){calendarMonth.setFullYear(calendarMonth.getFullYear()+diff);renderCalendar()}
 function goToday(){const now=new Date();calendarMonth=new Date(now.getFullYear(),now.getMonth(),1);renderCalendar()}
 function renderCalendar(){
- const y=calendarMonth.getFullYear(),m=calendarMonth.getMonth(),firstDay=new Date(y,m,1).getDay(),lastDate=new Date(y,m+1,0).getDate(),todayKey=localDateKey(),byDate={};
- dates.forEach(x=>byDate[x.date]=x.images?.length||0);
+ const y=calendarMonth.getFullYear(),m=calendarMonth.getMonth();
+ const firstDay=new Date(y,m,1).getDay();
+ const lastDate=new Date(y,m+1,0).getDate();
+ const todayKey=localDateKey();
+ const byDate={};
+ dates.forEach(x=>{byDate[x.date]=x;});
+ document.getElementById('calendarTitle').textContent=y+'年'+(m+1)+'月';
  let html='';
- for(let i=0;i<firstDay;i++)html+='<div class="day empty"></div>';
+ for(let i=0;i<firstDay;i++) html+='<div class="day empty"></div>';
  for(let d=1;d<=lastDate;d++){
-  const key=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),count=byDate[key]||0,weekDay=new Date(y,m,d).getDay(),item=dates.find(x=>x.date===key),hasMinrepo=!!minrepoDates[key],thumb=item&&item.images&&item.images[0]?'<img class="thumb" src="'+item.images[0].url+'">':'',cls=['day',weekDay===0?'sunday':'',weekDay===6?'saturday':'',key===todayKey?'today':''].join(' ');
-  html+='<button class="'+cls+'" '+((count||hasMinrepo)?'onclick="openCalendarDate(\''+key+'\')':'')+'>'+d+thumb+(count?'<span class="count">'+count+'枚</span>':'')+'</button>'
+  const key=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  const item=byDate[key];
+  const count=item&&Array.isArray(item.images)?item.images.length:0;
+  const hasMinrepo=!!minrepoDates[key];
+  const weekDay=new Date(y,m,d).getDay();
+  const cls=['day',weekDay===0?'sunday':'',weekDay===6?'saturday':'',key===todayKey?'today':''].filter(Boolean).join(' ');
+  let thumb='';
+  if(count>0 && item.images[0] && item.images[0].url){
+   thumb='<img class="thumb" src="'+esc(item.images[0].url)+'" alt="">';
+  }
+  const clickable=count>0||hasMinrepo;
+  const onclick=clickable?' onclick="openCalendarDate(\\''+key+'\\')"':'';
+  html+='<button type="button" class="'+cls+'"'+onclick+'>'+d+thumb+(count?'<span class="count">'+count+'枚</span>':'')+'</button>';
  }
- document.getElementById('calendarGrid').innerHTML=html
+ document.getElementById('calendarGrid').innerHTML=html;
 }
 async function load(){
  const [t,d,l,mi]=await Promise.all([fetch('today.json?'+Date.now()),fetch('dates.json?'+Date.now()),fetch('layouts.json?'+Date.now()),fetch('minrepo_data/index.json?'+Date.now())]);
