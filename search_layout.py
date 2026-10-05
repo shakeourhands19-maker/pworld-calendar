@@ -852,6 +852,7 @@ def main():
         print("5 : レイアウトIDから使用履歴を検索")
         print("6 : 基本レイアウト使用回数ランキング")
         print("7 : レイアウトIDの代表画像を開く")
+        print("8 : 同じレイアウトの過去画像を確認")
         print("0 : 終了")
         print()
 
@@ -900,10 +901,13 @@ def main():
                 layout_data
             )
 
+        elif choice == "8":
+            browse_layout_images(layout_data)
+
         else:
             print()
             print(
-                "1、2、3、4、5、6、7、0 のいずれかを入力してください。"
+                "1、2、3、4、5、6、7、8、0 のいずれかを入力してください。"
             )
 
 
