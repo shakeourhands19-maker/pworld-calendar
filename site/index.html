@@ -97,7 +97,7 @@ function renderCalendar(){
    thumb='<img class="thumb" src="'+esc(item.images[0].url)+'" alt="">';
   }
   const clickable=count>0||hasMinrepo;
-  const onclick=clickable?' onclick="openCalendarDate(\\''+key+'\\')"':'';
+  const onclick=clickable?' onclick="openCalendarDate(\''+key+'\')"':'';
   html+='<button type="button" class="'+cls+'"'+onclick+'>'+d+thumb+(count?'<span class="count">'+count+'枚</span>':'')+'</button>';
  }
  document.getElementById('calendarGrid').innerHTML=html;
