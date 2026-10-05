@@ -1,0 +1,783 @@
+{
+  "date": "2026-09-20",
+  "store": "プレイランドハッピー手稲前田店",
+  "source_url": "https://min-repo.com/3363434/",
+  "overall": {
+    "total_diff": null,
+    "average_diff": null,
+    "average_games": 3020,
+    "win_rate": {
+      "wins": 128,
+      "total": 323
+    }
+  },
+  "machines": [
+    {
+      "machine": "ネオアイムジャグラーEX",
+      "average_diff": 176,
+      "average_games": 5092,
+      "win_rate": {
+        "wins": 20,
+        "total": 36
+      },
+      "payout_rate": 101.2
+    },
+    {
+      "machine": "マイジャグラーV",
+      "average_diff": 62,
+      "average_games": 4764,
+      "win_rate": {
+        "wins": 10,
+        "total": 18
+      },
+      "payout_rate": 100.4
+    },
+    {
+      "machine": "スマスロ 沖ドキ!DUO アンコール",
+      "average_diff": -1867,
+      "average_games": 4379,
+      "win_rate": {
+        "wins": 0,
+        "total": 3
+      },
+      "payout_rate": 85.8
+    },
+    {
+      "machine": "スロット ソードアート・オンラインⅡ",
+      "average_diff": -548,
+      "average_games": 4320,
+      "win_rate": {
+        "wins": 2,
+        "total": 4
+      },
+      "payout_rate": 95.8
+    },
+    {
+      "machine": "スマスロ ハナビ",
+      "average_diff": 291,
+      "average_games": 4035,
+      "win_rate": {
+        "wins": 1,
+        "total": 2
+      },
+      "payout_rate": 102.4
+    },
+    {
+      "machine": "沖ドキ！BLACK",
+      "average_diff": 214,
+      "average_games": 4035,
+      "win_rate": {
+        "wins": 4,
+        "total": 7
+      },
+      "payout_rate": 101.8
+    },
+    {
+      "machine": "スロット ワールドダイスター",
+      "average_diff": 1505,
+      "average_games": 4033,
+      "win_rate": {
+        "wins": 2,
+        "total": 2
+      },
+      "payout_rate": 112.4
+    },
+    {
+      "machine": "沖ドキ!ゴージャス 30Φ",
+      "average_diff": 587,
+      "average_games": 3976,
+      "win_rate": {
+        "wins": 8,
+        "total": 14
+      },
+      "payout_rate": 104.9
+    },
+    {
+      "machine": "ゴーゴージャグラー３",
+      "average_diff": 130,
+      "average_games": 3790,
+      "win_rate": {
+        "wins": 9,
+        "total": 18
+      },
+      "payout_rate": 101.1
+    },
+    {
+      "machine": "スマスロ 甲鉄城のカバネリ 海門決戦",
+      "average_diff": -750,
+      "average_games": 3733,
+      "win_rate": {
+        "wins": 2,
+        "total": 12
+      },
+      "payout_rate": 93.3
+    },
+    {
+      "machine": "真打 吉宗",
+      "average_diff": -739,
+      "average_games": 3732,
+      "win_rate": {
+        "wins": 0,
+        "total": 3
+      },
+      "payout_rate": 93.4
+    },
+    {
+      "machine": "スマスロ北斗の拳 転生の章2",
+      "average_diff": -1345,
+      "average_games": 3444,
+      "win_rate": {
+        "wins": 2,
+        "total": 6
+      },
+      "payout_rate": 87.0
+    },
+    {
+      "machine": "スマスロ サンダーV",
+      "average_diff": -676,
+      "average_games": 3414,
+      "win_rate": {
+        "wins": 0,
+        "total": 2
+      },
+      "payout_rate": 93.4
+    },
+    {
+      "machine": "ファンキージャグラー２ＫＴ",
+      "average_diff": 3,
+      "average_games": 3372,
+      "win_rate": {
+        "wins": 2,
+        "total": 5
+      },
+      "payout_rate": 100.0
+    },
+    {
+      "machine": "スマスロモンキーターンV",
+      "average_diff": -334,
+      "average_games": 3192,
+      "win_rate": {
+        "wins": 3,
+        "total": 8
+      },
+      "payout_rate": 96.5
+    },
+    {
+      "machine": "L青春ブタ野郎はバニーガール先輩の夢を見ない",
+      "average_diff": -70,
+      "average_games": 3156,
+      "win_rate": {
+        "wins": 2,
+        "total": 7
+      },
+      "payout_rate": 99.3
+    },
+    {
+      "machine": "スマスロ リコリス・リコイル",
+      "average_diff": -175,
+      "average_games": 2970,
+      "win_rate": {
+        "wins": 6,
+        "total": 16
+      },
+      "payout_rate": 98.0
+    },
+    {
+      "machine": "L戦国乙女5 業火を穿つ宿焔の双刃",
+      "average_diff": 1777,
+      "average_games": 2910,
+      "win_rate": {
+        "wins": 3,
+        "total": 8
+      },
+      "payout_rate": 120.4
+    },
+    {
+      "machine": "新ハナビ",
+      "average_diff": 872,
+      "average_games": 2836,
+      "win_rate": {
+        "wins": 2,
+        "total": 3
+      },
+      "payout_rate": 110.2
+    },
+    {
+      "machine": "スマスロ タコスロ",
+      "average_diff": -231,
+      "average_games": 2804,
+      "win_rate": {
+        "wins": 0,
+        "total": 2
+      },
+      "payout_rate": 97.3
+    },
+    {
+      "machine": "Lスマスロ北斗の拳",
+      "average_diff": -179,
+      "average_games": 2726,
+      "win_rate": {
+        "wins": 2,
+        "total": 5
+      },
+      "payout_rate": 97.8
+    },
+    {
+      "machine": "ハッピージャグラーＶＩＩＩ",
+      "average_diff": 585,
+      "average_games": 2675,
+      "win_rate": {
+        "wins": 2,
+        "total": 5
+      },
+      "payout_rate": 107.3
+    },
+    {
+      "machine": "スマスロ新鬼武者3",
+      "average_diff": 147,
+      "average_games": 2655,
+      "win_rate": {
+        "wins": 1,
+        "total": 2
+      },
+      "payout_rate": 101.8
+    },
+    {
+      "machine": "Lパチスロ彼女、お借りします",
+      "average_diff": -797,
+      "average_games": 2622,
+      "win_rate": {
+        "wins": 1,
+        "total": 3
+      },
+      "payout_rate": 89.9
+    },
+    {
+      "machine": "ウルトラミラクルジャグラー",
+      "average_diff": -6,
+      "average_games": 2605,
+      "win_rate": {
+        "wins": 2,
+        "total": 4
+      },
+      "payout_rate": 99.9
+    },
+    {
+      "machine": "スマスロ スーパーブラックジャック",
+      "average_diff": 694,
+      "average_games": 2433,
+      "win_rate": {
+        "wins": 1,
+        "total": 2
+      },
+      "payout_rate": 109.5
+    },
+    {
+      "machine": "スマスロ 東京リベンジャーズ",
+      "average_diff": -802,
+      "average_games": 2270,
+      "win_rate": {
+        "wins": 2,
+        "total": 3
+      },
+      "payout_rate": 88.2
+    },
+    {
+      "machine": "沖ドキ！ＧＯＬＤ-30",
+      "average_diff": -413,
+      "average_games": 2265,
+      "win_rate": {
+        "wins": 2,
+        "total": 6
+      },
+      "payout_rate": 93.9
+    },
+    {
+      "machine": "押忍！番長ＺＥＲＯ",
+      "average_diff": -323,
+      "average_games": 2198,
+      "win_rate": {
+        "wins": 2,
+        "total": 5
+      },
+      "payout_rate": 95.1
+    },
+    {
+      "machine": "スマスロ モンスターハンターライズ",
+      "average_diff": -1609,
+      "average_games": 2028,
+      "win_rate": {
+        "wins": 0,
+        "total": 6
+      },
+      "payout_rate": 73.6
+    },
+    {
+      "machine": "Lパチスロ炎炎ノ消防隊2",
+      "average_diff": -361,
+      "average_games": 1975,
+      "win_rate": {
+        "wins": 2,
+        "total": 5
+      },
+      "payout_rate": 93.9
+    },
+    {
+      "machine": "Lパチスロうみねこのなく頃に2",
+      "average_diff": -492,
+      "average_games": 1975,
+      "win_rate": {
+        "wins": 0,
+        "total": 2
+      },
+      "payout_rate": 91.7
+    },
+    {
+      "machine": "スマスロ化物語",
+      "average_diff": -1567,
+      "average_games": 1971,
+      "win_rate": {
+        "wins": 0,
+        "total": 3
+      },
+      "payout_rate": 73.5
+    },
+    {
+      "machine": "L東京喰種",
+      "average_diff": -1367,
+      "average_games": 1924,
+      "win_rate": {
+        "wins": 2,
+        "total": 12
+      },
+      "payout_rate": 76.3
+    },
+    {
+      "machine": "ミスタージャグラー",
+      "average_diff": -31,
+      "average_games": 1906,
+      "win_rate": {
+        "wins": 1,
+        "total": 4
+      },
+      "payout_rate": 99.5
+    },
+    {
+      "machine": "スマスロ ゴッドイーター リザレクション",
+      "average_diff": 7,
+      "average_games": 1872,
+      "win_rate": {
+        "wins": 1,
+        "total": 4
+      },
+      "payout_rate": 100.1
+    },
+    {
+      "machine": "スマスロ やじきた道中記参る！",
+      "average_diff": 164,
+      "average_games": 1853,
+      "win_rate": {
+        "wins": 2,
+        "total": 3
+      },
+      "payout_rate": 103.0
+    },
+    {
+      "machine": "Lパチスロ かぐや様は告らせたい",
+      "average_diff": 972,
+      "average_games": 1810,
+      "win_rate": {
+        "wins": 1,
+        "total": 2
+      },
+      "payout_rate": 117.9
+    },
+    {
+      "machine": "スマスロ秘宝伝",
+      "average_diff": -1427,
+      "average_games": 1627,
+      "win_rate": {
+        "wins": 0,
+        "total": 3
+      },
+      "payout_rate": 70.8
+    },
+    {
+      "machine": "スマスロ ミリオンゴッド-神々の軌跡-",
+      "average_diff": -363,
+      "average_games": 1528,
+      "win_rate": {
+        "wins": 3,
+        "total": 8
+      },
+      "payout_rate": 92.1
+    },
+    {
+      "machine": "スマスロ マギアレコード 魔法少女まどか☆マギカ外伝",
+      "average_diff": -648,
+      "average_games": 1517,
+      "win_rate": {
+        "wins": 1,
+        "total": 5
+      },
+      "payout_rate": 85.8
+    },
+    {
+      "machine": "スマスロ とある魔術の禁書目録2",
+      "average_diff": -830,
+      "average_games": 1453,
+      "win_rate": {
+        "wins": 1,
+        "total": 4
+      },
+      "payout_rate": 81.0
+    },
+    {
+      "machine": "スマスロ 攻殻機動隊",
+      "average_diff": -915,
+      "average_games": 1431,
+      "win_rate": {
+        "wins": 0,
+        "total": 3
+      },
+      "payout_rate": 78.7
+    },
+    {
+      "machine": "L主役は銭形４",
+      "average_diff": 711,
+      "average_games": 1333,
+      "win_rate": {
+        "wins": 1,
+        "total": 2
+      },
+      "payout_rate": 117.8
+    },
+    {
+      "machine": "Lパチスロからくりサーカス2",
+      "average_diff": -1092,
+      "average_games": 1326,
+      "win_rate": {
+        "wins": 0,
+        "total": 4
+      },
+      "payout_rate": 72.5
+    },
+    {
+      "machine": "スマスロ ストリートファイター6",
+      "average_diff": 328,
+      "average_games": 1306,
+      "win_rate": {
+        "wins": 2,
+        "total": 2
+      },
+      "payout_rate": 108.4
+    },
+    {
+      "machine": "スマスロ シャーマンキング",
+      "average_diff": -881,
+      "average_games": 1237,
+      "win_rate": {
+        "wins": 0,
+        "total": 2
+      },
+      "payout_rate": 76.3
+    },
+    {
+      "machine": "Lパチスロ革命機ヴァルヴレイヴ2",
+      "average_diff": 607,
+      "average_games": 1236,
+      "win_rate": {
+        "wins": 1,
+        "total": 3
+      },
+      "payout_rate": 116.4
+    },
+    {
+      "machine": "スマート沖スロ ニューキングハナハナV",
+      "average_diff": 161,
+      "average_games": 1234,
+      "win_rate": {
+        "wins": 3,
+        "total": 5
+      },
+      "payout_rate": 104.3
+    },
+    {
+      "machine": "戦国コレクション6",
+      "average_diff": 102,
+      "average_games": 1096,
+      "win_rate": {
+        "wins": 1,
+        "total": 3
+      },
+      "payout_rate": 103.1
+    },
+    {
+      "machine": "スマスロ痛いのは嫌なので防御力に極振りしたいと思います。",
+      "average_diff": 47,
+      "average_games": 872,
+      "win_rate": {
+        "wins": 1,
+        "total": 2
+      },
+      "payout_rate": 101.8
+    },
+    {
+      "machine": "クレアの秘宝伝～はじまりの扉と太陽の石～ボーナストリガーver.",
+      "average_diff": 186,
+      "average_games": 840,
+      "win_rate": {
+        "wins": 1,
+        "total": 2
+      },
+      "payout_rate": 107.4
+    },
+    {
+      "machine": "スマスロバジリスク～甲賀忍法帖～絆2 天膳 BLACK EDITION",
+      "average_diff": 1489,
+      "average_games": 574,
+      "win_rate": {
+        "wins": 2,
+        "total": 2
+      },
+      "payout_rate": 186.5
+    },
+    {
+      "machine": "パチスロ ダンジョンに出会いを求めるのは間違っているだろうか2",
+      "average_diff": -367,
+      "average_games": 360,
+      "win_rate": {
+        "wins": 0,
+        "total": 2
+      },
+      "payout_rate": 66.0
+    }
+  ],
+  "machine_numbers": [
+    {
+      "machine": "押忍！番長4",
+      "machine_number": 356,
+      "diff": 3622,
+      "games": 6665,
+      "payout_rate": 118.1
+    },
+    {
+      "machine": "スマスロ とんでもスキルで異世界放浪メシ",
+      "machine_number": 557,
+      "diff": 2844,
+      "games": 2930,
+      "payout_rate": 132.4
+    },
+    {
+      "machine": "ニューパルサーＳＰＩＩＩ",
+      "machine_number": 1055,
+      "diff": 594,
+      "games": 1192,
+      "payout_rate": 116.6
+    },
+    {
+      "machine": "スマスロ 七つの魔剣が支配する",
+      "machine_number": 355,
+      "diff": 361,
+      "games": 1887,
+      "payout_rate": 106.4
+    },
+    {
+      "machine": "L不二子BT",
+      "machine_number": 336,
+      "diff": 283,
+      "games": 2974,
+      "payout_rate": 103.2
+    },
+    {
+      "machine": "スマスロケロット5BT",
+      "machine_number": 338,
+      "diff": 222,
+      "games": 6035,
+      "payout_rate": 101.2
+    },
+    {
+      "machine": "アレックス ブライト",
+      "machine_number": 337,
+      "diff": 155,
+      "games": 744,
+      "payout_rate": 106.9
+    },
+    {
+      "machine": "A-SLOT+異世界かるてっとBT",
+      "machine_number": 350,
+      "diff": 138,
+      "games": 1404,
+      "payout_rate": 103.3
+    },
+    {
+      "machine": "パチスロ ガメラ2",
+      "machine_number": 1068,
+      "diff": 111,
+      "games": 406,
+      "payout_rate": 109.1
+    },
+    {
+      "machine": "L麻雀格闘倶楽部　覚醒",
+      "machine_number": 521,
+      "diff": -178,
+      "games": 1846,
+      "payout_rate": 96.8
+    },
+    {
+      "machine": "A-SLOT+ この素晴らしい世界に祝福を！",
+      "machine_number": 351,
+      "diff": -184,
+      "games": 337,
+      "payout_rate": 81.8
+    },
+    {
+      "machine": "SHAKE BONUS TRIGGER",
+      "machine_number": 523,
+      "diff": -339,
+      "games": 702,
+      "payout_rate": 83.9
+    },
+    {
+      "machine": "Lアズールレーン THE ANIMATION",
+      "machine_number": 358,
+      "diff": -550,
+      "games": 326,
+      "payout_rate": 43.8
+    },
+    {
+      "machine": "L虚構推理",
+      "machine_number": 520,
+      "diff": -884,
+      "games": 2896,
+      "payout_rate": 89.8
+    },
+    {
+      "machine": "モグモグ風林火山 大海戦の巻",
+      "machine_number": 560,
+      "diff": -1534,
+      "games": 1898,
+      "payout_rate": 73.1
+    },
+    {
+      "machine": "L邪神ちゃんドロップキック",
+      "machine_number": 558,
+      "diff": -1889,
+      "games": 2127,
+      "payout_rate": 70.4
+    },
+    {
+      "machine": "交響詩篇エウレカセブン HI-EVOLUTION ZERO TYPE-ART",
+      "machine_number": 1070,
+      "diff": -2245,
+      "games": 3617,
+      "payout_rate": 79.3
+    },
+    {
+      "machine": "Lラブ嬢3～Wご指名はいかがですか?～",
+      "machine_number": 522,
+      "diff": -3134,
+      "games": 4430,
+      "payout_rate": 76.4
+    },
+    {
+      "machine": "L咲-Saki-頂上決戦",
+      "machine_number": 357,
+      "diff": 0,
+      "games": 0,
+      "payout_rate": null
+    }
+  ],
+  "tails": [
+    {
+      "tail": "0",
+      "average_diff": null,
+      "average_games": 3088,
+      "win_rate": {
+        "wins": 19,
+        "total": 42
+      },
+      "payout_rate": null
+    },
+    {
+      "tail": "1",
+      "average_diff": null,
+      "average_games": 2827,
+      "win_rate": {
+        "wins": 15,
+        "total": 40
+      },
+      "payout_rate": null
+    },
+    {
+      "tail": "2",
+      "average_diff": 135,
+      "average_games": 3676,
+      "win_rate": {
+        "wins": 18,
+        "total": 39
+      },
+      "payout_rate": 101.2
+    },
+    {
+      "tail": "3",
+      "average_diff": null,
+      "average_games": 2983,
+      "win_rate": {
+        "wins": 11,
+        "total": 39
+      },
+      "payout_rate": null
+    },
+    {
+      "tail": "5",
+      "average_diff": null,
+      "average_games": 3129,
+      "win_rate": {
+        "wins": 19,
+        "total": 42
+      },
+      "payout_rate": null
+    },
+    {
+      "tail": "6",
+      "average_diff": null,
+      "average_games": 2904,
+      "win_rate": {
+        "wins": 20,
+        "total": 40
+      },
+      "payout_rate": null
+    },
+    {
+      "tail": "7",
+      "average_diff": null,
+      "average_games": 2656,
+      "win_rate": {
+        "wins": 11,
+        "total": 39
+      },
+      "payout_rate": null
+    },
+    {
+      "tail": "8",
+      "average_diff": null,
+      "average_games": 2902,
+      "win_rate": {
+        "wins": 15,
+        "total": 42
+      },
+      "payout_rate": null
+    },
+    {
+      "tail": "ゾロ目 (下二桁)",
+      "average_diff": 258,
+      "average_games": 3080,
+      "win_rate": {
+        "wins": 22,
+        "total": 40
+      },
+      "payout_rate": 102.8
+    }
+  ]
+}
