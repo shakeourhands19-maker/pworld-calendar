@@ -23,7 +23,7 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 .image-date{padding:3px 0;color:#777;font-size:12px}
 .image-actions{display:flex;gap:6px;margin-top:5px}
 .image-actions button{flex:1;border:1px solid #ddd;background:#fff;border-radius:7px;padding:6px 4px;font-size:12px}
-.search-box{display:flex;gap:7px;margin-bottom:12px}
+.layout-sort{display:flex;align-items:center;gap:8px;margin:0 0 10px}.layout-sort span{font-size:13px;color:#666;white-space:nowrap}.layout-sort select{flex:1;border:1px solid #ddd;border-radius:8px;background:#fff;padding:9px 10px;font-size:14px}.search-box{display:flex;gap:7px;margin-bottom:12px}
 .search-box input{flex:1;border:1px solid #ddd;border-radius:8px;padding:10px;font-size:14px}
 .search-box button{border:1px solid #ddd;background:#fff;border-radius:8px;padding:0 12px}
 .modal{position:fixed;inset:0;background:#000c;z-index:20;display:flex;align-items:center;justify-content:center;padding:18px}
@@ -54,7 +54,7 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 </div><div id="calendarView"></div>
 </section>
 <section id="layouts" class="hidden">
-<div class="card"><h2>基本レイアウト</h2><div class="search-box"><input id="ocrSearchInput" type="search" placeholder="ポスターの文字を検索（例：周年、OPEN）"><button onclick="searchOCR()">検索</button></div><div id="layoutList" class="grid">読み込み中…</div></div>
+<div class="card"><h2>基本レイアウト</h2><div class="layout-sort"><span>並び順</span><select id="layoutSort" onchange="renderLayoutList()"><option value="latest_desc">最終使用順（新）</option><option value="latest_asc">最終使用順（古）</option><option value="count_desc">使用回数順（多）</option><option value="count_asc">使用回数順（少）</option><option value="first_desc">初登場順（新）</option><option value="first_asc">初登場順（古）</option></select></div><div class="search-box"><input id="ocrSearchInput" type="search" placeholder="ポスターの文字を検索（例：周年、OPEN）"><button onclick="searchOCR()">検索</button></div><div id="layoutList" class="grid">読み込み中…</div></div>
 <div id="layoutView"></div><div id="ocrView"></div>
 </section>
 </main>
@@ -101,6 +101,28 @@ async function openCalendarDate(date){
 }
 function openLayout(id){const l=layouts.find(x=>x.id===id);if(!l)return;const images=[...(l.images||[])].sort((a,b)=>b.date.localeCompare(a.date));const first=images[0]?.date||'';const last=images[images.length-1]?.date||'';const html=images.length?'<div class="grid">'+images.map(x=>'<div><button type="button" class="image-button" onclick="openLayoutImage(\''+x.date+'\')"><div class="image-date">'+esc(x.date)+'</div><img src="'+esc(x.url)+'" alt=""></button></div>').join('')+'</div>':'<p class="small">画像はありません。</p>';document.getElementById('layoutView').innerHTML='<div class="card"><h2>このレイアウトの過去画像</h2><p class="small">使用回数：'+images.length+'回　初登場：'+esc(last)+'　最終使用：'+esc(first)+'</p>'+html+'</div>';window.scrollTo({top:document.getElementById('layoutView').offsetTop-80,behavior:'smooth'})}
 function openLayoutImage(date){showTab('calendar');const y=Number(date.slice(0,4)),m=Number(date.slice(5,7))-1;calendarMonth=new Date(y,m,1);renderCalendar();setTimeout(()=>openCalendarDate(date),0)}
+function layoutDates(l){
+ const dates=(l.images||[]).map(x=>x.date).filter(Boolean).sort();
+ return {first:dates[0]||'',latest:dates[dates.length-1]||''};
+}
+function renderLayoutList(){
+ const select=document.getElementById('layoutSort');
+ const sort=select?select.value:'latest_desc';
+ const sorted=[...layouts].sort((a,b)=>{
+   const ad=layoutDates(a),bd=layoutDates(b);
+   if(sort==='latest_desc') return bd.latest.localeCompare(ad.latest)||b.count-a.count;
+   if(sort==='latest_asc') return ad.latest.localeCompare(bd.latest)||b.count-a.count;
+   if(sort==='count_desc') return b.count-a.count||bd.latest.localeCompare(ad.latest);
+   if(sort==='count_asc') return a.count-b.count||bd.latest.localeCompare(ad.latest);
+   if(sort==='first_desc') return bd.first.localeCompare(ad.first)||b.count-a.count;
+   if(sort==='first_asc') return ad.first.localeCompare(bd.first)||b.count-a.count;
+   return 0;
+ });
+ document.getElementById('layoutList').innerHTML=sorted.map(x=>{
+   const d=layoutDates(x);
+   return '<button class="layout-card" onclick="openLayout(\\''+x.id+'\\')"><img src="'+esc(x.representative)+'" alt=""><div class="layout-meta"><strong>'+x.count+'回使用</strong>最終使用 '+esc(d.latest)+'</div></button>';
+ }).join('')||'<p class="small">まだレイアウトデータがありません。</p>';
+}
 function searchOCR(){const q=document.getElementById('ocrSearchInput').value.trim().toLowerCase();const view=document.getElementById('ocrView');if(!q){view.innerHTML='';return}const hits=Object.entries(ocrIndex).filter(([k,v])=>String(v.text||'').toLowerCase().includes(q));if(!hits.length){view.innerHTML='<div class="card"><p class="small">「'+esc(q)+'」を含むOCRデータはありません。</p></div>';return}view.innerHTML='<div class="card"><h2>OCR検索結果</h2>'+hits.map(([key,v])=>'<div class="search-result"><button onclick="openLayoutImage(\''+key.split('/')[0]+'\')"><img src="'+esc(v.url)+'" alt=""><div class="image-date">'+esc(key.split('/')[0])+' / '+esc(key.split('/')[1])+'</div></button></div>').join('')+'</div>'}
 function openLayoutImage(date){showTab('calendar');const y=Number(date.slice(0,4)),m=Number(date.slice(5,7))-1;calendarMonth=new Date(y,m,1);renderCalendar();setTimeout(()=>openCalendarDate(date),0);}
 function changeMonth(diff){calendarMonth.setMonth(calendarMonth.getMonth()+diff);renderCalendar()}
@@ -137,7 +159,7 @@ async function load(){
  const [d,l,mi,o]=await Promise.all([fetch('dates.json?'+Date.now()),fetch('layouts.json?'+Date.now()),fetch('minrepo_data/index.json?'+Date.now()),fetch('ocr_index.json?'+Date.now())]);
  dates=await d.json();layouts=await l.json();const minrepoIndex=await mi.json();try{ocrIndex=await o.json()}catch(e){ocrIndex={}}
  if(Array.isArray(minrepoIndex)){minrepoIndex.forEach(x=>{if(typeof x==='string')minrepoDates[x]=true;else if(x&&x.date)minrepoDates[x.date]=true})}
-  const sortedLayouts=[...layouts].sort((a,b)=>{const ad=(a.images||[]).map(x=>x.date).sort().pop()||'';const bd=(b.images||[]).map(x=>x.date).sort().pop()||'';return bd.localeCompare(ad)});document.getElementById('layoutList').innerHTML=sortedLayouts.map(x=>'<button class="layout-card" onclick="openLayout(\''+x.id+'\')"><img src="'+esc(x.representative)+'" alt=""><div class="layout-meta"><strong>'+x.count+'回使用</strong>最終使用 '+esc((x.images||[]).map(v=>v.date).sort().pop()||'')+'</div></button>').join('')||'<p class="small">まだレイアウトデータがありません。</p>';
+  renderLayoutList();
  renderCalendar()
 }
 load().catch(e=>document.getElementById('calendarGrid').textContent='データの読み込みに失敗しました。');
