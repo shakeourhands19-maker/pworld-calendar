@@ -193,17 +193,18 @@ def create_ocr_images(
         image_path
     )[0]
 
-    image = Image.open(
+    original = Image.open(
         image_path
-    ).convert("L")
+    ).convert("RGB")
+
 
     # --------------------------------------------------------
     # 3倍に拡大
     # --------------------------------------------------------
 
-    width, height = image.size
+    width, height = original.size
 
-    image = image.resize(
+    image = original.resize(
         (
             width * 3,
             height * 3
@@ -212,29 +213,32 @@ def create_ocr_images(
     )
 
 
+    ocr_images = []
+
+
     # ========================================================
     # OCRパターン1
-    # 通常
+    # 通常グレースケール
     # ========================================================
 
-    image_normal = image.copy()
+    gray = image.convert("L")
 
-    image_normal = ImageEnhance.Contrast(
-        image_normal
+    gray = ImageEnhance.Contrast(
+        gray
     ).enhance(2.0)
 
-    image_normal = image_normal.filter(
+    gray = gray.filter(
         ImageFilter.SHARPEN
     )
 
-    normal_path = (
+    path = (
         base_name
         + "_ocr_normal.png"
     )
 
-    image_normal.save(
-        normal_path
-    )
+    gray.save(path)
+
+    ocr_images.append(path)
 
 
     # ========================================================
@@ -242,28 +246,28 @@ def create_ocr_images(
     # 強コントラスト
     # ========================================================
 
-    image_contrast = image.copy()
+    contrast = image.convert("L")
 
-    image_contrast = ImageEnhance.Contrast(
-        image_contrast
+    contrast = ImageEnhance.Contrast(
+        contrast
     ).enhance(3.0)
 
-    image_contrast = image_contrast.filter(
+    contrast = contrast.filter(
         ImageFilter.SHARPEN
     )
 
-    image_contrast = image_contrast.filter(
+    contrast = contrast.filter(
         ImageFilter.SHARPEN
     )
 
-    contrast_path = (
+    path = (
         base_name
         + "_ocr_contrast.png"
     )
 
-    image_contrast.save(
-        contrast_path
-    )
+    contrast.save(path)
+
+    ocr_images.append(path)
 
 
     # ========================================================
@@ -271,23 +275,21 @@ def create_ocr_images(
     # 二値化
     # ========================================================
 
-    threshold = 180
+    binary = image.convert("L")
 
-    image_binary = image.copy()
-
-    image_binary = image_binary.point(
+    binary = binary.point(
         lambda p:
-        255 if p > threshold else 0
+        255 if p > 180 else 0
     )
 
-    binary_path = (
+    path = (
         base_name
         + "_ocr_binary.png"
     )
 
-    image_binary.save(
-        binary_path
-    )
+    binary.save(path)
+
+    ocr_images.append(path)
 
 
     # ========================================================
@@ -295,31 +297,55 @@ def create_ocr_images(
     # 強めの二値化
     # ========================================================
 
-    threshold_strong = 210
+    binary_strong = image.convert("L")
 
-    image_binary_strong = image.copy()
-
-    image_binary_strong = image_binary_strong.point(
+    binary_strong = binary_strong.point(
         lambda p:
-        255 if p > threshold_strong else 0
+        255 if p > 210 else 0
     )
 
-    binary_strong_path = (
+    path = (
         base_name
         + "_ocr_binary_strong.png"
     )
 
-    image_binary_strong.save(
-        binary_strong_path
-    )
+    binary_strong.save(path)
+
+    ocr_images.append(path)
 
 
-    return [
-        normal_path,
-        contrast_path,
-        binary_path,
-        binary_strong_path
+    # ========================================================
+    # OCRパターン5～7
+    # RGBチャンネル分離
+    #
+    # 色付き文字の場合、
+    # グレースケール化すると背景と文字が
+    # 同じ明るさになってしまう場合がある。
+    #
+    # R / G / Bを別々にOCRすることで、
+    # 特定の色だけを強調できる。
+    # ========================================================
+
+    channels = image.split()
+
+    channel_names = [
+        "R",
+        "G",
+        "B"
     ]
+
+    for channel, channel_name in zip(
+        channels,
+        channel_names
+    ):
+
+        channel = ImageEnhance.Contrast(
+            channel
+        ).enhance(2.5)
+
+        channel = channel.filter(
+            ImageFilter.SHARPEN
+        )
 
 
 # ============================================================
