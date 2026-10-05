@@ -968,6 +968,93 @@ def show_history_image_content(image_path, date, filename):
 
 
 # ============================================================
+# 同じレイアウトの過去告知を一括OCR
+# ============================================================
+
+def show_layout_history_ocr(layout_data):
+    print()
+    print("=" * 60)
+    print("同じレイアウトの過去告知を一括確認")
+    print("=" * 60)
+
+    layout_id = input(
+        "レイアウトIDを入力してください (例: layout_004): "
+    ).strip()
+
+    if layout_id not in layout_data:
+        print()
+        print(f"{layout_id} は登録されていません。")
+        return
+
+    images = layout_data[layout_id].get("images", [])
+
+    valid_images = []
+
+    for image_info in images:
+        if not isinstance(image_info, dict):
+            continue
+
+        date = image_info.get("date", "")
+        filename = image_info.get("filename", "")
+
+        if not date or not filename:
+            continue
+
+        image_path = os.path.abspath(
+            os.path.join(DATA_DIR, date, filename)
+        )
+
+        valid_images.append(
+            (date, filename, image_path)
+        )
+
+    print()
+    print(f"{layout_id} の過去告知")
+    print("-" * 60)
+
+    if not valid_images:
+        print("確認できる画像がありません。")
+        return
+
+    print(f"対象: {len(valid_images)}件")
+    print()
+    print("OCRを実行します...")
+    print()
+
+    success_count = 0
+
+    for number, (date, filename, image_path) in enumerate(
+        valid_images,
+        start=1
+    ):
+        print("=" * 60)
+        print(f"{number}/{len(valid_images)}")
+        print(f"日付: {date}")
+        print(f"画像: {filename}")
+        print("=" * 60)
+
+        if not os.path.exists(image_path):
+            print("(画像ファイルなし)")
+            print()
+            continue
+
+        ocr_text = run_history_ocr(image_path)
+
+        if ocr_text.strip():
+            print(ocr_text)
+            success_count += 1
+        else:
+            print("(OCR結果なし)")
+
+        print()
+
+    print("=" * 60)
+    print("一括OCR完了")
+    print("=" * 60)
+    print(f"OCR結果あり: {success_count}/{len(valid_images)}件")
+
+
+# ============================================================
 # メイン
 # ============================================================
 
@@ -994,6 +1081,7 @@ def main():
         print("6 : 基本レイアウト使用回数ランキング")
         print("7 : レイアウトIDの代表画像を開く")
         print("8 : 同じレイアウトの過去画像を確認")
+        print("9 : 同じレイアウトの過去告知を一括OCR")
         print("0 : 終了")
         print()
 
@@ -1045,10 +1133,13 @@ def main():
         elif choice == "8":
             browse_layout_images(layout_data)
 
+        elif choice == "9":
+            show_layout_history_ocr(layout_data)
+
         else:
             print()
             print(
-                "1、2、3、4、5、6、7、8、0 のいずれかを入力してください。"
+                "1、2、3、4、5、6、7、8、9、0 のいずれかを入力してください。"
             )
 
 
