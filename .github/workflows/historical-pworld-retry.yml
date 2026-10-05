@@ -1,0 +1,39 @@
+name: 過去ポスター再発掘テスト
+on:
+  workflow_dispatch:
+    inputs:
+      start_year:
+        description: "画像保存履歴の開始年"
+        required: true
+        default: "2024"
+      end_year:
+        description: "画像保存履歴の終了年"
+        required: true
+        default: "2026"
+permissions:
+  contents: read
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリ取得
+        uses: actions/checkout@v4
+      - name: Pythonセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 依存パッケージ
+        run: pip install requests
+      - name: 発掘済みURLを再調査
+        env:
+          START_YEAR: ${{ inputs.start_year }}
+          END_YEAR: ${{ inputs.end_year }}
+        run: |
+          test -f historical_probe/index.json
+          python historical_pworld_retry.py
+      - name: 再発掘結果を保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-pworld-retry
+          path: historical_probe_retry
+          retention-days: 14
