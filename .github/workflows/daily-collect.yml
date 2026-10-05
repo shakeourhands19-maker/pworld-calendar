@@ -33,6 +33,19 @@ jobs:
         run: |
           python daily_pworld_actions.py
 
+      - name: スマホ用ページ生成
+        run: |
+          python build_mobile_site.py
+
+      - name: GitHub Pages用ファイル作成
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: GitHub Pagesへデプロイ
+        id: deployment
+        uses: actions/deploy-pages@v4
+
       - name: 収集データを保存
         uses: actions/upload-artifact@v4
         with:
