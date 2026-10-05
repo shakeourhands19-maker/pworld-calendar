@@ -1,0 +1,50 @@
+name: 過去ポスター発掘テスト
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_year:
+        description: "開始年"
+        required: true
+        default: "2024"
+      end_year:
+        description: "終了年"
+        required: true
+        default: "2026"
+      max_snapshots:
+        description: "調査するページスナップショット数"
+        required: true
+        default: "300"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリ取得
+        uses: actions/checkout@v4
+
+      - name: Pythonセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 依存パッケージ
+        run: pip install requests beautifulsoup4
+
+      - name: 過去ポスター発掘
+        env:
+          START_YEAR: ${{ inputs.start_year }}
+          END_YEAR: ${{ inputs.end_year }}
+          MAX_SNAPSHOTS: ${{ inputs.max_snapshots }}
+          MAX_IMAGES: "500"
+        run: python historical_pworld.py
+
+      - name: 発掘結果を保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-pworld-probe
+          path: historical_probe
+          retention-days: 14
