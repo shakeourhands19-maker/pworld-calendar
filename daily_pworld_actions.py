@@ -34,7 +34,6 @@ DATA_DIR = "data"
 KEYWORDS = [
     "開店",
     "OPEN",
-    "時差開放"
 ]
 
 
@@ -193,17 +192,17 @@ def create_ocr_images(
         image_path
     )[0]
 
-    original = Image.open(
+    image = Image.open(
         image_path
-    ).convert("RGB")
+    ).convert("L")
 
     # --------------------------------------------------------
     # 3倍に拡大
     # --------------------------------------------------------
 
-    width, height = original.size
+    width, height = image.size
 
-    image = original.resize(
+    image = image.resize(
         (
             width * 3,
             height * 3
@@ -211,32 +210,37 @@ def create_ocr_images(
         Image.Resampling.LANCZOS
     )
 
+
     ocr_images = []
 
 
     # ========================================================
     # OCRパターン1
-    # 通常グレースケール
+    # 通常
     # ========================================================
 
-    gray = image.convert("L")
+    image_normal = image.copy()
 
-    gray = ImageEnhance.Contrast(
-        gray
+    image_normal = ImageEnhance.Contrast(
+        image_normal
     ).enhance(2.0)
 
-    gray = gray.filter(
+    image_normal = image_normal.filter(
         ImageFilter.SHARPEN
     )
 
-    path = (
+    normal_path = (
         base_name
         + "_ocr_normal.png"
     )
 
-    gray.save(path)
+    image_normal.save(
+        normal_path
+    )
 
-    ocr_images.append(path)
+    ocr_images.append(
+        normal_path
+    )
 
 
     # ========================================================
@@ -244,28 +248,32 @@ def create_ocr_images(
     # 強コントラスト
     # ========================================================
 
-    contrast = image.convert("L")
+    image_contrast = image.copy()
 
-    contrast = ImageEnhance.Contrast(
-        contrast
+    image_contrast = ImageEnhance.Contrast(
+        image_contrast
     ).enhance(3.0)
 
-    contrast = contrast.filter(
+    image_contrast = image_contrast.filter(
         ImageFilter.SHARPEN
     )
 
-    contrast = contrast.filter(
+    image_contrast = image_contrast.filter(
         ImageFilter.SHARPEN
     )
 
-    path = (
+    contrast_path = (
         base_name
         + "_ocr_contrast.png"
     )
 
-    contrast.save(path)
+    image_contrast.save(
+        contrast_path
+    )
 
-    ocr_images.append(path)
+    ocr_images.append(
+        contrast_path
+    )
 
 
     # ========================================================
@@ -273,21 +281,27 @@ def create_ocr_images(
     # 二値化
     # ========================================================
 
-    binary = image.convert("L")
+    threshold = 180
 
-    binary = binary.point(
+    image_binary = image.copy()
+
+    image_binary = image_binary.point(
         lambda p:
-        255 if p > 180 else 0
+        255 if p > threshold else 0
     )
 
-    path = (
+    binary_path = (
         base_name
         + "_ocr_binary.png"
     )
 
-    binary.save(path)
+    image_binary.save(
+        binary_path
+    )
 
-    ocr_images.append(path)
+    ocr_images.append(
+        binary_path
+    )
 
 
     # ========================================================
@@ -295,96 +309,27 @@ def create_ocr_images(
     # 強めの二値化
     # ========================================================
 
-    binary_strong = image.convert("L")
+    threshold_strong = 210
 
-    binary_strong = binary_strong.point(
+    image_binary_strong = image.copy()
+
+    image_binary_strong = image_binary_strong.point(
         lambda p:
-        255 if p > 210 else 0
+        255 if p > threshold_strong else 0
     )
 
-    path = (
+    binary_strong_path = (
         base_name
         + "_ocr_binary_strong.png"
     )
 
-    binary_strong.save(path)
-
-    ocr_images.append(path)
-
-
-    # ========================================================
-    # OCRパターン5
-    # 赤チャンネル
-    # ========================================================
-
-    red = image.getchannel("R")
-
-    red = ImageEnhance.Contrast(
-        red
-    ).enhance(2.5)
-
-    red = red.filter(
-        ImageFilter.SHARPEN
+    image_binary_strong.save(
+        binary_strong_path
     )
 
-    path = (
-        base_name
-        + "_ocr_R.png"
+    ocr_images.append(
+        binary_strong_path
     )
-
-    red.save(path)
-
-    ocr_images.append(path)
-
-
-    # ========================================================
-    # OCRパターン6
-    # 緑チャンネル
-    # ========================================================
-
-    green = image.getchannel("G")
-
-    green = ImageEnhance.Contrast(
-        green
-    ).enhance(2.5)
-
-    green = green.filter(
-        ImageFilter.SHARPEN
-    )
-
-    path = (
-        base_name
-        + "_ocr_G.png"
-    )
-
-    green.save(path)
-
-    ocr_images.append(path)
-
-
-    # ========================================================
-    # OCRパターン7
-    # 青チャンネル
-    # ========================================================
-
-    blue = image.getchannel("B")
-
-    blue = ImageEnhance.Contrast(
-        blue
-    ).enhance(2.5)
-
-    blue = blue.filter(
-        ImageFilter.SHARPEN
-    )
-
-    path = (
-        base_name
-        + "_ocr_B.png"
-    )
-
-    blue.save(path)
-
-    ocr_images.append(path)
 
 
     # ========================================================
@@ -394,14 +339,12 @@ def create_ocr_images(
     return ocr_images
 
 
-
 # ============================================================
 # OCR実行
 # ============================================================
 
 def run_single_ocr(
-    image_path,
-    psm
+    image_path
 ):
 
     try:
@@ -414,7 +357,7 @@ def run_single_ocr(
                 "-l",
                 "jpn+eng",
                 "--psm",
-                str(psm)
+                "6"
             ],
             capture_output=True,
             text=True,
@@ -429,7 +372,7 @@ def run_single_ocr(
 
         print(
             f"OCRエラー: "
-            f"{image_path} / PSM {psm} / {e}"
+            f"{image_path} / {e}"
         )
 
         return ""
@@ -449,34 +392,17 @@ def run_ocr(
 
         results = []
 
-        # ----------------------------------------------------
-        # OCR方式
-        #
-        # 6  = 通常のブロック状テキスト
-        # 11 = 画像内に散在する文字
-        # 12 = 散在文字＋縦横混在
-        # ----------------------------------------------------
-
-        psm_modes = [
-            6,
-            11,
-            12
-        ]
-
         for ocr_image in ocr_images:
 
-            for psm in psm_modes:
+            text = run_single_ocr(
+                ocr_image
+            )
 
-                text = run_single_ocr(
-                    ocr_image,
-                    psm
+            if text.strip():
+
+                results.append(
+                    text
                 )
-
-                if text.strip():
-
-                    results.append(
-                        text
-                    )
 
 
         # ----------------------------------------------------
@@ -519,7 +445,6 @@ def run_ocr(
                 except Exception:
 
                     pass
-
 
 # ============================================================
 # OCR文字の簡易正規化
@@ -781,26 +706,29 @@ for i, image_url in enumerate(
         "--------------------------------"
     )
 
+
     # ========================================================
     # 除外判定
     # ========================================================
 
     exclude_hits = []
 
+    # --------------------------------------------------------
+    # 除外キーワード判定
+    # --------------------------------------------------------
+
     for keyword in EXCLUDE_KEYWORDS:
 
-        if (
-            keyword.lower()
-            in normalized_text
-        ):
+        if keyword.lower() in normalized_text:
 
-            exclude_hits.append(
-                keyword
-            )
+            exclude_hits.append(keyword)
 
 
     # --------------------------------------------------------
     # 「時差開放」＋「抽選」は除外
+    #
+    # ※「時差開放」単独では除外しない
+    # ※「時差開放」自体をOCR判定の対象にはしない
     # --------------------------------------------------------
 
     if (
@@ -837,21 +765,20 @@ for i, image_url in enumerate(
 
     matched_keywords = []
 
+    # --------------------------------------------------------
+    # 採用キーワード判定
+    # --------------------------------------------------------
+
     for keyword in KEYWORDS:
 
-        if (
-            keyword.lower()
-            in normalized_text
-        ):
+        if keyword.lower() in normalized_text:
 
-            matched_keywords.append(
-                keyword
-            )
+            matched_keywords.append(keyword)
 
 
-    # --------------------------------------------------------
-    # 採用
-    # --------------------------------------------------------
+    # ========================================================
+    # 採用 / 該当なし
+    # ========================================================
 
     if matched_keywords:
 
@@ -865,9 +792,7 @@ for i, image_url in enumerate(
             destination
         )
 
-        matched_files.append(
-            filename
-        )
+        matched_files.append(filename)
 
         print()
 
@@ -886,85 +811,6 @@ for i, image_url in enumerate(
             f"[{i}/{len(image_urls)}] "
             f"{filename} → 該当なし"
         )
-
-
-# ============================================================
-# index.json更新
-# ============================================================
-
-index_path = os.path.join(
-    DATA_DIR,
-    "index.json"
-)
-
-index_data = {}
-
-
-if os.path.exists(
-    index_path
-):
-
-    try:
-
-        with open(
-            index_path,
-            "r",
-            encoding="utf-8"
-        ) as f:
-
-            index_data = json.load(
-                f
-            )
-
-    except Exception:
-
-        index_data = {}
-
-
-# 今日のフォルダ内ファイルを取得
-
-if os.path.exists(
-    today_dir
-):
-
-    today_files = sorted(
-        [
-            filename
-            for filename in os.listdir(
-                today_dir
-            )
-            if filename.lower().endswith(
-                (
-                    ".jpg",
-                    ".jpeg",
-                    ".png",
-                    ".gif",
-                    ".webp"
-                )
-            )
-        ]
-    )
-
-else:
-
-    today_files = []
-
-
-index_data[today] = today_files
-
-
-with open(
-    index_path,
-    "w",
-    encoding="utf-8"
-) as f:
-
-    json.dump(
-        index_data,
-        f,
-        ensure_ascii=False,
-        indent=2
-    )
 
 
 # ============================================================
