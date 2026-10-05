@@ -619,6 +619,46 @@ def search_layout_by_date(layout_data):
 
 
 # ============================================================
+# レイアウトIDから使用履歴を検索
+# ============================================================
+
+def search_layout_history(layout_data):
+    print()
+    print("=" * 60)
+    print("レイアウトIDから使用履歴を検索")
+    print("=" * 60)
+
+    layout_id = input(
+        "レイアウトIDを入力してください (例: layout_005): "
+    ).strip()
+
+    if layout_id not in layout_data:
+        print()
+        print(f"{layout_id} は登録されていません。")
+        return
+
+    images = layout_data[layout_id].get("images", [])
+
+    print()
+    print(f"{layout_id} の使用履歴")
+    print("-" * 60)
+    print(f"使用回数: {len(images)}回")
+
+    if not images:
+        print("使用履歴はありません。")
+        return
+
+    for image_info in images:
+        if not isinstance(image_info, dict):
+            continue
+
+        print(
+            f"  {image_info.get('date', '')}"
+            f" / {image_info.get('filename', '')}"
+        )
+
+
+# ============================================================
 # メイン
 # ============================================================
 
