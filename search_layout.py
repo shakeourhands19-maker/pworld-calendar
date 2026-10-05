@@ -743,6 +743,90 @@ def show_layout_ranking(layout_data):
 
 
 # ============================================================
+# レイアウト使用画像を選択して開く
+# ============================================================
+
+def browse_layout_images(layout_data):
+    print()
+    print("=" * 60)
+    print("同じレイアウトの過去画像を確認")
+    print("=" * 60)
+
+    layout_id = input(
+        "レイアウトIDを入力してください (例: layout_004): "
+    ).strip()
+
+    if layout_id not in layout_data:
+        print()
+        print(f"{layout_id} は登録されていません。")
+        return
+
+    images = layout_data[layout_id].get("images", [])
+    valid_images = []
+
+    for image_info in images:
+        if not isinstance(image_info, dict):
+            continue
+
+        date = image_info.get("date", "")
+        filename = image_info.get("filename", "")
+
+        if not date or not filename:
+            continue
+
+        image_path = os.path.abspath(
+            os.path.join(DATA_DIR, date, filename)
+        )
+
+        valid_images.append((date, filename, image_path))
+
+    print()
+    print(f"{layout_id} の使用履歴")
+    print("-" * 60)
+
+    if not valid_images:
+        print("確認できる画像がありません。")
+        return
+
+    for number, (date, filename, image_path) in enumerate(valid_images, start=1):
+        exists = "画像あり" if os.path.exists(image_path) else "画像なし"
+        print(f"{number}: {date} / {filename}  [{exists}]")
+
+    print()
+    print("確認したい画像の番号を入力してください。")
+    print("0 : 戻る")
+
+    try:
+        number = int(input("番号: ").strip())
+    except ValueError:
+        print("数字を入力してください。")
+        return
+
+    if number == 0:
+        return
+
+    if number < 1 or number > len(valid_images):
+        print("番号が範囲外です。")
+        return
+
+    date, filename, image_path = valid_images[number - 1]
+
+    print()
+    print(f"対象: {date} / {filename}")
+    print(f"画像: {image_path}")
+
+    if not os.path.exists(image_path):
+        print("画像ファイルが見つかりません。")
+        return
+
+    try:
+        os.startfile(image_path)
+        print("画像を開きました。")
+    except Exception as e:
+        print(f"画像を開けませんでした: {e}")
+
+
+# ============================================================
 # メイン
 # ============================================================
 
