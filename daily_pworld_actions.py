@@ -21,7 +21,7 @@ PAGE_URL = (
     "playland-happy-t.htm"
 )
 
-TESSERACT = r"D:\tesseract OCR\tesseract.exe"
+TESSERACT = "tesseract"
 
 IMAGE_DIR = "downloaded_images"
 DATA_DIR = "data"
