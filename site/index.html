@@ -68,7 +68,7 @@ function renderMinrepo(x){
  const tailTable=tails.length?'<h3 class="section-title">末尾別データ</h3><div style="overflow-x:auto"><table class="minrepo-table"><tr><th>末尾</th><th>平均差枚</th><th>平均G数</th><th>勝率</th><th>出率</th></tr>'+tailRows+'</table></div>':'';
  return '<h3>みんレポ</h3>'+summary+machineTable+numberTable+tailTable+(x.source_url?'<p class="small">出典：<a href="'+esc(x.source_url)+'" target="_blank" rel="noopener">みんレポ</a></p>':'');
 }
-function openCalendarDate(date){
+async function openCalendarDate(date){
  const d=dates.find(x=>x.date===date);const view=document.getElementById('calendarView');
  view.innerHTML='<div class="card"><h2>'+esc(date)+'</h2>'+(d?renderImages(d.images):'<p class="small">告知画像はありません。</p>')+'<div id="minrepoView"><p class="small">みんレポデータを読み込み中…</p></div></div>';
  window.scrollTo({top:view.offsetTop-80,behavior:'smooth'});
