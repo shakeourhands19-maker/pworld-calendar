@@ -24,7 +24,6 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 <nav>
 <button id="tabToday" class="active" onclick="showTab('today')">今日</button>
 <button id="tabCalendar" onclick="showTab('calendar')">カレンダー</button>
-<button id="tabDates" onclick="showTab('dates')">過去</button>
 <button id="tabLayouts" onclick="showTab('layouts')">レイアウト</button>
 </nav>
 <main>
@@ -37,14 +36,13 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 <div id="calendarGrid" class="calendar"></div>
 </div><div id="calendarView"></div>
 </section>
-<section id="dates" class="hidden"><div class="card"><h2>過去の告知</h2><div id="dateList">読み込み中…</div></div><div id="dateView"></div></section>
-<section id="layouts" class="hidden"><div class="card"><h2>基本レイアウト</h2><div id="layoutList">読み込み中…</div></div><div id="layoutView"></div></section>
+<section id="layouts" class="hidden"><div class="card"><h2>基本レイアウト</h2><div id="layoutList" class="grid">読み込み中…</div></div><div id="layoutView"></div></section>
 </main>
 <script>
 let dates=[],layouts=[],minrepoDates={};let calendarMonth=new Date();calendarMonth.setDate(1);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function localDateKey(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function showTab(tab){['today','calendar','dates','layouts'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==tab));['tabToday','tabCalendar','tabDates','tabLayouts'].forEach(x=>document.getElementById(x).classList.remove('active'));document.getElementById('tab'+tab[0].toUpperCase()+tab.slice(1)).classList.add('active');if(tab==='calendar')renderCalendar()}
+function showTab(tab){['today','calendar','layouts'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==tab));['tabToday','tabCalendar','tabLayouts'].forEach(x=>document.getElementById(x).classList.remove('active'));document.getElementById('tab'+tab[0].toUpperCase()+tab.slice(1)).classList.add('active');if(tab==='calendar')renderCalendar()}
 function imageHtml(x){return '<div><div class="small">'+esc(x.filename)+'</div><img src="'+x.url+'"></div>'}
 function renderImages(items){return items.length?'<div class="grid">'+items.map(imageHtml).join('')+'</div>':'<p class="small">告知画像はありません。</p>'}
 function openDate(date){const d=dates.find(x=>x.date===date);if(!d)return;document.getElementById('dateView').innerHTML='<div class="card"><h2>'+esc(date)+'</h2>'+renderImages(d.images)+'</div>';window.scrollTo({top:document.getElementById('dateView').offsetTop-80,behavior:'smooth'})}
@@ -111,8 +109,7 @@ async function load(){
  const today=await t.json();dates=await d.json();layouts=await l.json();const minrepoIndex=await mi.json();
  if(Array.isArray(minrepoIndex)){minrepoIndex.forEach(x=>{if(typeof x==='string')minrepoDates[x]=true;else if(x&&x.date)minrepoDates[x.date]=true})}
  document.getElementById('todayContent').innerHTML=renderImages(today.images||[]);
- document.getElementById('dateList').innerHTML=dates.map(x=>'<button class="datebtn" onclick="openDate(\''+x.date+'\')">'+esc(x.date)+' <span class="small">('+x.images.length+'枚)</span></button>').join('')||'<p class="small">履歴はありません。</p>';
- document.getElementById('layoutList').innerHTML=layouts.map(x=>'<button class="layoutbtn" onclick="openLayout(\''+x.id+'\')"><span class="layout-title">'+esc(x.id)+'</span> <span class="small">('+x.count+'件)</span></button>').join('')||'<p class="small">まだレイアウトデータがありません。</p>';
+  document.getElementById('layoutList').innerHTML=layouts.map(x=>'<button class="layoutbtn" onclick="openLayout(\''+x.id+'\')" style="padding:0;border:0;border-radius:8px;overflow:hidden;background:#fff"><img src="'+esc(x.representative)+'" alt="'+esc(x.id)+'" style="width:100%;height:180px;object-fit:contain;background:#f7f7f7"><span class="small" style="display:block;padding:7px 5px;text-align:center">'+x.count+'件</span></button>').join('')||'<p class="small">まだレイアウトデータがありません。</p>';
  renderCalendar()
 }
 load().catch(e=>document.getElementById('todayContent').textContent='データの読み込みに失敗しました。');
