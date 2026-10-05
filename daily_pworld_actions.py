@@ -327,7 +327,8 @@ def create_ocr_images(
 # ============================================================
 
 def run_single_ocr(
-    image_path
+    image_path,
+    psm
 ):
 
     try:
@@ -340,7 +341,7 @@ def run_single_ocr(
                 "-l",
                 "jpn+eng",
                 "--psm",
-                "6"
+                str(psm)
             ],
             capture_output=True,
             text=True,
@@ -355,7 +356,7 @@ def run_single_ocr(
 
         print(
             f"OCRエラー: "
-            f"{image_path} / {e}"
+            f"{image_path} / PSM {psm} / {e}"
         )
 
         return ""
@@ -375,17 +376,34 @@ def run_ocr(
 
         results = []
 
+        # ----------------------------------------------------
+        # OCR方式
+        #
+        # 6  = 通常のブロック状テキスト
+        # 11 = 画像内に散在する文字
+        # 12 = 散在文字＋縦横混在
+        # ----------------------------------------------------
+
+        psm_modes = [
+            6,
+            11,
+            12
+        ]
+
         for ocr_image in ocr_images:
 
-            text = run_single_ocr(
-                ocr_image
-            )
+            for psm in psm_modes:
 
-            if text.strip():
-
-                results.append(
-                    text
+                text = run_single_ocr(
+                    ocr_image,
+                    psm
                 )
+
+                if text.strip():
+
+                    results.append(
+                        text
+                    )
 
 
         # ----------------------------------------------------
