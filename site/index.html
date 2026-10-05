@@ -48,16 +48,11 @@ function showTab(tab){['today','calendar','dates','layouts'].forEach(x=>document
 function imageHtml(x){return '<div><div class="small">'+esc(x.filename)+'</div><img src="'+x.url+'"></div>'}
 function renderImages(items){return items.length?'<div class="grid">'+items.map(imageHtml).join('')+'</div>':'<p class="small">告知画像はありません。</p>'}
 function openDate(date){const d=dates.find(x=>x.date===date);if(!d)return;document.getElementById('dateView').innerHTML='<div class="card"><h2>'+esc(date)+'</h2>'+renderImages(d.images)+'</div>';window.scrollTo({top:document.getElementById('dateView').offsetTop-80,behavior:'smooth'})}
-
 function formatWinRate(w){if(!w)return '-';if(typeof w==='object'&&w.wins!=null&&w.total!=null)return w.wins+'/'+w.total+' ('+(w.total?((w.wins/w.total)*100).toFixed(1):'0.0')+'%)';return w}
 function formatNum(v){return v==null?'-':Number.isFinite(Number(v))?Number(v).toLocaleString('ja-JP'):esc(v)}
 function renderMinrepo(x){
  const o=x.overall||{};
- const summary='<div class="minrepo-summary">'+
- '<div class="minrepo-stat">総差枚<strong>'+formatNum(o.total_diff)+'</strong></div>'+
- '<div class="minrepo-stat">平均差枚<strong>'+formatNum(o.average_diff)+'</strong></div>'+
- '<div class="minrepo-stat">平均G数<strong>'+formatNum(o.average_games)+'</strong></div>'+
- '<div class="minrepo-stat">勝率<strong>'+formatWinRate(o.win_rate)+'</strong></div></div>';
+ const summary='<div class="minrepo-summary"><div class="minrepo-stat">総差枚<strong>'+formatNum(o.total_diff)+'</strong></div><div class="minrepo-stat">平均差枚<strong>'+formatNum(o.average_diff)+'</strong></div><div class="minrepo-stat">平均G数<strong>'+formatNum(o.average_games)+'</strong></div><div class="minrepo-stat">勝率<strong>'+formatWinRate(o.win_rate)+'</strong></div></div>';
  const machines=x.machines||[];
  const machineRows=machines.map(v=>'<tr><td>'+esc(v.machine??'-')+'</td><td>'+formatNum(v.average_diff)+'</td><td>'+formatNum(v.average_games)+'</td><td>'+formatWinRate(v.win_rate)+'</td><td>'+formatNum(v.payout_rate)+'</td></tr>').join('');
  const machineTable=machines.length?'<h3 class="section-title">機種別データ</h3><div style="overflow-x:auto"><table class="minrepo-table"><tr><th>機種</th><th>平均差枚</th><th>平均G数</th><th>勝率</th><th>出率</th></tr>'+machineRows+'</table></div>':'<p class="small">機種別データはありません。</p>';
@@ -69,20 +64,12 @@ function renderMinrepo(x){
  const tailTable=tails.length?'<h3 class="section-title">末尾別データ</h3><div style="overflow-x:auto"><table class="minrepo-table"><tr><th>末尾</th><th>平均差枚</th><th>平均G数</th><th>勝率</th><th>出率</th></tr>'+tailRows+'</table></div>':'';
  return '<h3>みんレポ</h3>'+summary+machineTable+numberTable+tailTable+(x.source_url?'<p class="small">出典：<a href="'+esc(x.source_url)+'" target="_blank" rel="noopener">みんレポ</a></p>':'');
 }
-
 async function openCalendarDate(date){
- const d=dates.find(x=>x.date===date);
- const view=document.getElementById('calendarView');
+ const d=dates.find(x=>x.date===date);const view=document.getElementById('calendarView');
  view.innerHTML='<div class="card"><h2>'+esc(date)+'</h2>'+(d?renderImages(d.images):'<p class="small">告知画像はありません。</p>')+'<div id="minrepoView"><p class="small">みんレポデータを読み込み中…</p></div></div>';
  window.scrollTo({top:view.offsetTop-80,behavior:'smooth'});
- try{
-   const r=await fetch('minrepo_data/'+date+'.json?'+Date.now());
-   if(!r.ok)throw new Error('not found');
-   const x=await r.json();
-   document.getElementById('minrepoView').innerHTML=renderMinrepo(x);
- }catch(e){
-   document.getElementById('minrepoView').innerHTML='<h3>みんレポ</h3><p class="small">この日のみんレポデータはありません。</p>';
- }
+ try{const r=await fetch('minrepo_data/'+date+'.json?'+Date.now());if(!r.ok)throw new Error('not found');const x=await r.json();document.getElementById('minrepoView').innerHTML=renderMinrepo(x)}
+ catch(e){document.getElementById('minrepoView').innerHTML='<h3>みんレポ</h3><p class="small">この日のみんレポデータはありません。</p>'}
 }
 function openLayout(id){const l=layouts.find(x=>x.id===id);if(!l)return;document.getElementById('layoutView').innerHTML='<div class="card"><h2>'+esc(id)+' <span class="small">('+l.count+'件)</span></h2>'+renderImages(l.images)+'</div>';window.scrollTo({top:document.getElementById('layoutView').offsetTop-80,behavior:'smooth'})}
 function changeMonth(diff){calendarMonth.setMonth(calendarMonth.getMonth()+diff);renderCalendar()}
@@ -94,8 +81,8 @@ function renderCalendar(){
  let html='';
  for(let i=0;i<firstDay;i++)html+='<div class="day empty"></div>';
  for(let d=1;d<=lastDate;d++){
-   const key=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),count=byDate[key]||0,weekDay=new Date(y,m,d).getDay(),item=dates.find(x=>x.date===key),hasMinrepo=!!minrepoDates[key],thumb=item&&item.images&&item.images[0]?'<img class="thumb" src="'+item.images[0].url+'">':'',cls=['day',weekDay===0?'sunday':'',weekDay===6?'saturday':'',key===todayKey?'today':''].join(' ');
-   html+='<button class="'+cls+'" '+((count||hasMinrepo)?'onclick="openCalendarDate(\''+key+'\')"':'')+'>'+d+thumb+(count?'<span class="count">'+count+'枚</span>':(hasMinrepo?'<span class="count">みんレポ</span>':''))+'</button>'
+  const key=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),count=byDate[key]||0,weekDay=new Date(y,m,d).getDay(),item=dates.find(x=>x.date===key),hasMinrepo=!!minrepoDates[key],thumb=item&&item.images&&item.images[0]?'<img class="thumb" src="'+item.images[0].url+'">':'',cls=['day',weekDay===0?'sunday':'',weekDay===6?'saturday':'',key===todayKey?'today':''].join(' ');
+  html+='<button class="'+cls+'" '+((count||hasMinrepo)?'onclick="openCalendarDate(\''+key+'\')':'')+'>'+d+thumb+(count?'<span class="count">'+count+'枚</span>':'')+'</button>'
  }
  document.getElementById('calendarGrid').innerHTML=html
 }
