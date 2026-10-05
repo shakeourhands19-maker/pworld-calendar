@@ -767,6 +767,7 @@ def main():
         print("4 : 日付から基本レイアウトを検索")
         print("5 : レイアウトIDから使用履歴を検索")
         print("6 : 基本レイアウト使用回数ランキング")
+        print("7 : レイアウトIDの代表画像を開く")
         print("0 : 終了")
         print()
 
@@ -805,10 +806,20 @@ def main():
         elif choice == "6":
             show_layout_ranking(layout_data)
 
+        elif choice == "7":
+            layout_id = input(
+                "レイアウトIDを入力してください (例: layout_004): "
+            ).strip()
+
+            open_layout_representative(
+                layout_id,
+                layout_data
+            )
+
         else:
             print()
             print(
-                "1、2、3、4、5、6、0 のいずれかを入力してください。"
+                "1、2、3、4、5、6、7、0 のいずれかを入力してください。"
             )
 
 
