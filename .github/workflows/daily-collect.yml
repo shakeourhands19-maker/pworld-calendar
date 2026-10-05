@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -34,6 +34,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: 過去データを復元
+        run: |
+          python restore_cloud_data.py
+
       - name: P-WORLD収集・OCR・レイアウト判定
         run: |
           python daily_pworld_actions.py
@@ -41,6 +45,14 @@ jobs:
       - name: スマホ用ページ生成
         run: |
           python build_mobile_site.py
+
+      - name: 収集結果をGitHubへ保存
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site
+          git diff --cached --quiet || git commit -m "自動更新: P-WORLD告知データ"
+          git push
 
       - name: GitHub Pages用ファイル作成
         uses: actions/upload-pages-artifact@v3
