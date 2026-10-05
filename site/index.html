@@ -50,5 +50,6 @@ function renderCalendar(){const y=calendarMonth.getFullYear(),m=calendarMonth.ge
 async function load(){const [t,d,l]=await Promise.all([fetch('today.json?'+Date.now()),fetch('dates.json?'+Date.now()),fetch('layouts.json?'+Date.now())]);const today=await t.json();dates=await d.json();layouts=await l.json();document.getElementById('todayContent').innerHTML=renderImages(today.images||[]);document.getElementById('dateList').innerHTML=dates.map(x=>'<button class="datebtn" onclick="openDate(\''+x.date+'\')">'+esc(x.date)+' <span class="small">('+x.images.length+'枚)</span></button>').join('')||'<p class="small">履歴はありません。</p>';document.getElementById('layoutList').innerHTML=layouts.map(x=>'<button class="layoutbtn" onclick="openLayout(\''+x.id+'\')"><span class="layout-title">'+esc(x.id)+'</span> <span class="small">('+x.count+'件)</span></button>').join('')||'<p class="small">まだレイアウトデータがありません。</p>';renderCalendar()}
 load().catch(e=>document.getElementById('todayContent').textContent='データの読み込みに失敗しました。');
 </script>
+<!-- Pages再デプロイ確認 -->
 </body>
 </html>
