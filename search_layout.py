@@ -572,6 +572,53 @@ def search_custom_image(layout_data):
 
 
 # ============================================================
+# 日付からレイアウトを検索
+# ============================================================
+
+def search_layout_by_date(layout_data):
+    print()
+    print("=" * 60)
+    print("日付から基本レイアウトを検索")
+    print("=" * 60)
+
+    date = input("日付を入力してください (例: 2026-10-05): ").strip()
+
+    if not date:
+        print("日付が入力されていません。")
+        return
+
+    found = []
+
+    for layout_id in sorted(layout_data.keys()):
+        images = layout_data[layout_id].get("images", [])
+
+        for image_info in images:
+            if not isinstance(image_info, dict):
+                continue
+
+            if image_info.get("date") == date:
+                found.append((
+                    layout_id,
+                    image_info.get("filename", "")
+                ))
+
+    print()
+
+    if not found:
+        print(f"{date} に使用された基本レイアウトは見つかりませんでした。")
+        return
+
+    print(f"{date} の基本レイアウト")
+    print("-" * 60)
+
+    for layout_id, filename in found:
+        print(f"{layout_id}  /  {filename}")
+
+    print()
+    print(f"合計: {len(found)}件")
+
+
+# ============================================================
 # メイン
 # ============================================================
 
