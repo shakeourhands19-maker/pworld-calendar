@@ -49,22 +49,26 @@ function imageHtml(x){return '<div><div class="small">'+esc(x.filename)+'</div><
 function renderImages(items){return items.length?'<div class="grid">'+items.map(imageHtml).join('')+'</div>':'<p class="small">告知画像はありません。</p>'}
 function openDate(date){const d=dates.find(x=>x.date===date);if(!d)return;document.getElementById('dateView').innerHTML='<div class="card"><h2>'+esc(date)+'</h2>'+renderImages(d.images)+'</div>';window.scrollTo({top:document.getElementById('dateView').offsetTop-80,behavior:'smooth'})}
 function formatWinRate(w){if(!w)return '-';if(typeof w==='object'&&w.wins!=null&&w.total!=null)return w.wins+'/'+w.total+' ('+(w.total?((w.wins/w.total)*100).toFixed(1):'0.0')+'%)';return w}
-function formatNum(v){return v==null?'-':Number.isFinite(Number(v))?Number(v).toLocaleString('ja-JP'):esc(v)}
+function formatNum(v){return v==null?'-':Number.isFinite(Number(String(v).replace(/,/g,'')))?Number(String(v).replace(/,/g,'')).toLocaleString('ja-JP'):esc(v)}
 function renderMinrepo(x){
  const o=x.overall||{};
- const summary='<div class="minrepo-summary"><div class="minrepo-stat">総差枚<strong>'+formatNum(o.total_diff)+'</strong></div><div class="minrepo-stat">平均差枚<strong>'+formatNum(o.average_diff)+'</strong></div><div class="minrepo-stat">平均G数<strong>'+formatNum(o.average_games)+'</strong></div><div class="minrepo-stat">勝率<strong>'+formatWinRate(o.win_rate)+'</strong></div></div>';
+ const totalDiff=o.total_diff??o['総差枚'];
+ const avgDiff=o.average_diff??o['平均差枚'];
+ const avgGames=o.average_games??o['平均G数'];
+ const winRate=o.win_rate??o['勝率'];
+ const summary='<div class="minrepo-summary"><div class="minrepo-stat">総差枚<strong>'+formatNum(totalDiff)+'</strong></div><div class="minrepo-stat">平均差枚<strong>'+formatNum(avgDiff)+'</strong></div><div class="minrepo-stat">平均G数<strong>'+formatNum(avgGames)+'</strong></div><div class="minrepo-stat">勝率<strong>'+formatWinRate(winRate)+'</strong></div></div>';
  const machines=x.machines||[];
- const machineRows=machines.map(v=>'<tr><td>'+esc(v.machine??'-')+'</td><td>'+formatNum(v.average_diff)+'</td><td>'+formatNum(v.average_games)+'</td><td>'+formatWinRate(v.win_rate)+'</td><td>'+formatNum(v.payout_rate)+'</td></tr>').join('');
+ const machineRows=machines.map(v=>'<tr><td>'+esc(v.machine??v['機種']??'-')+'</td><td>'+formatNum(v.average_diff??v['平均差枚'])+'</td><td>'+formatNum(v.average_games??v['平均G数'])+'</td><td>'+formatWinRate(v.win_rate??v['勝率'])+'</td><td>'+formatNum(v.payout_rate??v['出率'])+'</td></tr>').join('');
  const machineTable=machines.length?'<h3 class="section-title">機種別データ</h3><div style="overflow-x:auto"><table class="minrepo-table"><tr><th>機種</th><th>平均差枚</th><th>平均G数</th><th>勝率</th><th>出率</th></tr>'+machineRows+'</table></div>':'<p class="small">機種別データはありません。</p>';
  const numbers=x.machine_numbers||[];
- const numberRows=numbers.map(v=>'<tr><td>'+esc(v.machine??'-')+'</td><td>'+formatNum(v.machine_number)+'</td><td>'+formatNum(v.diff)+'</td><td>'+formatNum(v.games)+'</td><td>'+formatNum(v.payout_rate)+'</td></tr>').join('');
+ const numberRows=numbers.map(v=>'<tr><td>'+esc(v.machine??v['機種']??'-')+'</td><td>'+formatNum(v.machine_number??v['台番号'])+'</td><td>'+formatNum(v.diff??v['差枚'])+'</td><td>'+formatNum(v.games??v['G数'])+'</td><td>'+formatNum(v.payout_rate??v['出率'])+'</td></tr>').join('');
  const numberTable=numbers.length?'<h3 class="section-title">台番号別データ</h3><div style="overflow-x:auto"><table class="minrepo-table"><tr><th>機種</th><th>台番号</th><th>差枚</th><th>G数</th><th>出率</th></tr>'+numberRows+'</table></div>':'';
  const tails=x.tails||[];
- const tailRows=tails.map(v=>'<tr><td>'+esc(v.tail??'-')+'</td><td>'+formatNum(v.average_diff)+'</td><td>'+formatNum(v.average_games)+'</td><td>'+formatWinRate(v.win_rate)+'</td><td>'+formatNum(v.payout_rate)+'</td></tr>').join('');
+ const tailRows=tails.map(v=>'<tr><td>'+esc(v.tail??v['末尾']??'-')+'</td><td>'+formatNum(v.average_diff??v['平均差枚'])+'</td><td>'+formatNum(v.average_games??v['平均G数'])+'</td><td>'+formatWinRate(v.win_rate??v['勝率'])+'</td><td>'+formatNum(v.payout_rate??v['出率'])+'</td></tr>').join('');
  const tailTable=tails.length?'<h3 class="section-title">末尾別データ</h3><div style="overflow-x:auto"><table class="minrepo-table"><tr><th>末尾</th><th>平均差枚</th><th>平均G数</th><th>勝率</th><th>出率</th></tr>'+tailRows+'</table></div>':'';
  return '<h3>みんレポ</h3>'+summary+machineTable+numberTable+tailTable+(x.source_url?'<p class="small">出典：<a href="'+esc(x.source_url)+'" target="_blank" rel="noopener">みんレポ</a></p>':'');
 }
-async function openCalendarDate(date){
+function openCalendarDate(date){
  const d=dates.find(x=>x.date===date);const view=document.getElementById('calendarView');
  view.innerHTML='<div class="card"><h2>'+esc(date)+'</h2>'+(d?renderImages(d.images):'<p class="small">告知画像はありません。</p>')+'<div id="minrepoView"><p class="small">みんレポデータを読み込み中…</p></div></div>';
  window.scrollTo({top:view.offsetTop-80,behavior:'smooth'});
