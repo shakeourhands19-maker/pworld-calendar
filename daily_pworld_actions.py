@@ -185,16 +185,22 @@ def calculate_layout_distance(
 # OCR用画像作成
 # ============================================================
 
-def create_ocr_image(
-    image_path,
-    output_path
+def create_ocr_images(
+    image_path
 ):
+
+    base_name = os.path.splitext(
+        image_path
+    )[0]
 
     image = Image.open(
         image_path
     ).convert("L")
 
+    # --------------------------------------------------------
     # 3倍に拡大
+    # --------------------------------------------------------
+
     width, height = image.size
 
     image = image.resize(
@@ -205,43 +211,131 @@ def create_ocr_image(
         Image.Resampling.LANCZOS
     )
 
-    # コントラスト強調
-    image = ImageEnhance.Contrast(
-        image
+
+    # ========================================================
+    # OCRパターン1
+    # 通常
+    # ========================================================
+
+    image_normal = image.copy()
+
+    image_normal = ImageEnhance.Contrast(
+        image_normal
     ).enhance(2.0)
 
-    # シャープ化
-    image = image.filter(
+    image_normal = image_normal.filter(
         ImageFilter.SHARPEN
     )
 
-    image.save(
-        output_path
+    normal_path = (
+        base_name
+        + "_ocr_normal.png"
     )
+
+    image_normal.save(
+        normal_path
+    )
+
+
+    # ========================================================
+    # OCRパターン2
+    # 強コントラスト
+    # ========================================================
+
+    image_contrast = image.copy()
+
+    image_contrast = ImageEnhance.Contrast(
+        image_contrast
+    ).enhance(3.0)
+
+    image_contrast = image_contrast.filter(
+        ImageFilter.SHARPEN
+    )
+
+    image_contrast = image_contrast.filter(
+        ImageFilter.SHARPEN
+    )
+
+    contrast_path = (
+        base_name
+        + "_ocr_contrast.png"
+    )
+
+    image_contrast.save(
+        contrast_path
+    )
+
+
+    # ========================================================
+    # OCRパターン3
+    # 二値化
+    # ========================================================
+
+    threshold = 180
+
+    image_binary = image.copy()
+
+    image_binary = image_binary.point(
+        lambda p:
+        255 if p > threshold else 0
+    )
+
+    binary_path = (
+        base_name
+        + "_ocr_binary.png"
+    )
+
+    image_binary.save(
+        binary_path
+    )
+
+
+    # ========================================================
+    # OCRパターン4
+    # 強めの二値化
+    # ========================================================
+
+    threshold_strong = 210
+
+    image_binary_strong = image.copy()
+
+    image_binary_strong = image_binary_strong.point(
+        lambda p:
+        255 if p > threshold_strong else 0
+    )
+
+    binary_strong_path = (
+        base_name
+        + "_ocr_binary_strong.png"
+    )
+
+    image_binary_strong.save(
+        binary_strong_path
+    )
+
+
+    return [
+        normal_path,
+        contrast_path,
+        binary_path,
+        binary_strong_path
+    ]
 
 
 # ============================================================
 # OCR実行
 # ============================================================
 
-def run_ocr(image_path):
-
-    temp_file = (
-        os.path.splitext(image_path)[0]
-        + "_ocr.png"
-    )
+def run_single_ocr(
+    image_path
+):
 
     try:
-
-        create_ocr_image(
-            image_path,
-            temp_file
-        )
 
         result = subprocess.run(
             [
                 TESSERACT,
-                temp_file,
+                image_path,
                 "stdout",
                 "-l",
                 "jpn+eng",
@@ -266,17 +360,74 @@ def run_ocr(image_path):
 
         return ""
 
+
+def run_ocr(
+    image_path
+):
+
+    ocr_images = []
+
+    try:
+
+        ocr_images = create_ocr_images(
+            image_path
+        )
+
+        results = []
+
+        for ocr_image in ocr_images:
+
+            text = run_single_ocr(
+                ocr_image
+            )
+
+            if text.strip():
+
+                results.append(
+                    text
+                )
+
+
+        # ----------------------------------------------------
+        # OCR結果を結合
+        # ----------------------------------------------------
+
+        return "\n".join(
+            results
+        )
+
+
+    except Exception as e:
+
+        print(
+            f"OCR処理エラー: "
+            f"{image_path} / {e}"
+        )
+
+        return ""
+
+
     finally:
 
-        if os.path.exists(
-            temp_file
-        ):
-            try:
-                os.remove(
-                    temp_file
-                )
-            except Exception:
-                pass
+        # ----------------------------------------------------
+        # OCR用一時ファイル削除
+        # ----------------------------------------------------
+
+        for ocr_image in ocr_images:
+
+            if os.path.exists(
+                ocr_image
+            ):
+
+                try:
+
+                    os.remove(
+                        ocr_image
+                    )
+
+                except Exception:
+
+                    pass
 
 
 # ============================================================
