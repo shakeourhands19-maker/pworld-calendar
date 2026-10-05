@@ -38,3 +38,16 @@ if os.path.isfile(layout_index_source):
     shutil.copy2(layout_index_source, layout_index_dest)
 
 print("GitHub Pagesに保存していた過去データを復元しました。")
+
+
+# みんレポ過去データを復元
+MINREPO_SOURCE = os.path.join(SITE_DIR, "minrepo_data")
+MINREPO_DEST = "minrepo_data"
+if os.path.isdir(MINREPO_SOURCE):
+    os.makedirs(MINREPO_DEST, exist_ok=True)
+    for filename in os.listdir(MINREPO_SOURCE):
+        src = os.path.join(MINREPO_SOURCE, filename)
+        dst = os.path.join(MINREPO_DEST, filename)
+        if os.path.isfile(src):
+            shutil.copy2(src, dst)
+    print("みんレポ過去データを復元しました。")
