@@ -26,6 +26,12 @@ TESSERACT = "tesseract"
 IMAGE_DIR = "downloaded_images"
 DATA_DIR = "data"
 
+# 基本レイアウトの代表画像保存先
+LAYOUT_DIR = os.path.join(
+    DATA_DIR,
+    "layouts"
+)
+
 
 # ============================================================
 # 採用キーワード
@@ -40,10 +46,7 @@ KEYWORDS = [
 # ============================================================
 # 除外キーワード
 #
-# ここに入っている文字がOCR結果に含まれていた場合、
-# その画像は除外する。
-#
-# 「時差開放」専用の判定は行わない。
+# 「時差開放」「即時開放」は判定しない。
 # ============================================================
 
 EXCLUDE_KEYWORDS = [
@@ -86,6 +89,11 @@ os.makedirs(
 
 os.makedirs(
     DATA_DIR,
+    exist_ok=True
+)
+
+os.makedirs(
+    LAYOUT_DIR,
     exist_ok=True
 )
 
@@ -255,7 +263,6 @@ def create_ocr_images(
 
     # ========================================================
     # OCRパターン1
-    # 通常
     # ========================================================
 
     image_normal = image.copy()
@@ -285,7 +292,6 @@ def create_ocr_images(
 
     # ========================================================
     # OCRパターン2
-    # 強コントラスト
     # ========================================================
 
     image_contrast = image.copy()
@@ -319,7 +325,6 @@ def create_ocr_images(
 
     # ========================================================
     # OCRパターン3
-    # 二値化
     # ========================================================
 
     threshold = 180
@@ -348,7 +353,6 @@ def create_ocr_images(
 
     # ========================================================
     # OCRパターン4
-    # 強めの二値化
     # ========================================================
 
     threshold_strong = 210
@@ -668,7 +672,6 @@ for i, image_url in enumerate(
     start=1
 ):
 
-
     # ========================================================
     # 拡張子判定
     # ========================================================
@@ -789,12 +792,6 @@ for i, image_url in enumerate(
 
     # ========================================================
     # 除外判定
-    #
-    # ※ここではEXCLUDE_KEYWORDSだけを見る
-    #
-    # ※「時差開放」
-    # ※「時差開放＋抽選」
-    # などの特別判定は行わない。
     # ========================================================
 
     exclude_hits = []
@@ -931,15 +928,8 @@ else:
     )
 
 
-print()
-
-print(
-    "index.jsonを更新しました。"
-)
-
-
 # ============================================================
-# layout_index.json作成
+# layout_index.json
 # ============================================================
 
 print()
@@ -986,65 +976,177 @@ if os.path.exists(
                 f
             )
 
+    except Exception as e:
 
-    except Exception:
+        print(
+            f"既存layout_index.jsonの読み込み失敗: {e}"
+        )
 
         layout_data = {}
 
 
 # ============================================================
-# data以下の画像を全部収集
+# 既存レイアウトの署名を復元
+#
+# 既存JSONには署名を保存していないため、
+# 代表画像から再計算する。
 # ============================================================
 
-all_images = []
+layout_groups = []
 
 
-for root, dirs, files in os.walk(
-    DATA_DIR
-):
+for layout_id, layout_info in layout_data.items():
 
-    for filename in files:
+    images = layout_info.get(
+        "images",
+        []
+    )
 
-        if not filename.lower().endswith(
-            (
-                ".jpg",
-                ".jpeg",
-                ".png",
-                ".gif",
-                ".webp",
-            )
+
+    if not images:
+        continue
+
+
+    # --------------------------------------------------------
+    # 代表画像を探す
+    # --------------------------------------------------------
+
+    representative_path = None
+
+
+    for image_info in images:
+
+        if isinstance(
+            image_info,
+            dict
         ):
-            continue
+
+            date = image_info.get(
+                "date"
+            )
+
+            filename = image_info.get(
+                "filename"
+            )
+
+            if date and filename:
+
+                candidate = os.path.join(
+                    DATA_DIR,
+                    date,
+                    filename
+                )
+
+                if os.path.exists(
+                    candidate
+                ):
+
+                    representative_path = candidate
+
+                    break
 
 
-        full_path = os.path.join(
-            root,
-            filename
+        else:
+
+            # 旧形式への対応
+            candidate = os.path.join(
+                DATA_DIR,
+                image_info
+            )
+
+            if os.path.exists(
+                candidate
+            ):
+
+                representative_path = candidate
+
+                break
+
+
+    if not representative_path:
+
+        continue
+
+
+    signature = create_layout_signature(
+        representative_path
+    )
+
+
+    if signature is None:
+        continue
+
+
+    layout_groups.append(
+        {
+            "id": layout_id,
+            "signature": signature,
+            "images": images,
+        }
+    )
+
+
+# ============================================================
+# layout番号の最大値を取得
+# ============================================================
+
+max_layout_number = 0
+
+
+for layout in layout_groups:
+
+    match = re.search(
+        r"layout_(\d+)",
+        layout["id"]
+    )
+
+
+    if match:
+
+        number = int(
+            match.group(1)
+        )
+
+        max_layout_number = max(
+            max_layout_number,
+            number
         )
 
 
-        relative_path = os.path.relpath(
-            full_path,
-            DATA_DIR
-        )
+# ============================================================
+# data以下から「今日の採用画像」を取得
+#
+# レイアウト検索対象は採用画像だけ。
+# ============================================================
+
+today_images = []
 
 
-        all_images.append(
+for filename in matched_files:
+
+    full_path = os.path.join(
+        today_dir,
+        filename
+    )
+
+
+    if os.path.exists(
+        full_path
+    ):
+
+        today_images.append(
             (
-                relative_path,
+                filename,
                 full_path
             )
         )
 
 
 # ============================================================
-# レイアウトグループ作成
+# 今日の画像を既存レイアウトと比較
 # ============================================================
 
-layout_groups = []
-
-
-for relative_path, full_path in all_images:
+for filename, full_path in today_images:
 
     signature = create_layout_signature(
         full_path
@@ -1062,7 +1164,7 @@ for relative_path, full_path in all_images:
 
 
     # ========================================================
-    # 既存レイアウトと比較
+    # 既存レイアウトを検索
     # ========================================================
 
     for layout in layout_groups:
@@ -1083,21 +1185,44 @@ for relative_path, full_path in all_images:
 
 
     # ========================================================
-    # 同一レイアウト
+    # 既存レイアウトに追加
     # ========================================================
 
     if matched_layout:
 
-        matched_layout[
-            "images"
-        ].append(
-            relative_path
-        )
+        image_entry = {
+            "date": today,
+            "filename": filename
+        }
+
+
+        # 同じ画像が既に登録されていないか確認
+        already_exists = False
+
+
+        for existing in matched_layout["images"]:
+
+            if (
+                isinstance(existing, dict)
+                and existing.get("date") == today
+                and existing.get("filename") == filename
+            ):
+
+                already_exists = True
+
+                break
+
+
+        if not already_exists:
+
+            matched_layout["images"].append(
+                image_entry
+            )
 
 
         print(
-            f"同一レイアウト: "
-            f"{relative_path} → "
+            f"既存レイアウト: "
+            f"{today}/{filename} → "
             f"{matched_layout['id']} "
             f"(距離 {matched_distance:.1f})"
         )
@@ -1109,22 +1234,24 @@ for relative_path, full_path in all_images:
 
     else:
 
+        max_layout_number += 1
+
+
         layout_id = (
             f"layout_"
-            f"{len(layout_groups) + 1:03d}"
+            f"{max_layout_number:03d}"
         )
 
 
         new_layout = {
-
             "id": layout_id,
-
             "signature": signature,
-
             "images": [
-                relative_path
+                {
+                    "date": today,
+                    "filename": filename
+                }
             ]
-
         }
 
 
@@ -1135,9 +1262,108 @@ for relative_path, full_path in all_images:
 
         print(
             f"新規レイアウト: "
-            f"{relative_path} → "
+            f"{today}/{filename} → "
             f"{layout_id}"
         )
+
+
+        # ----------------------------------------------------
+        # 代表画像保存
+        # ----------------------------------------------------
+
+        representative_path = os.path.join(
+            LAYOUT_DIR,
+            layout_id + ".jpg"
+        )
+
+
+        try:
+
+            shutil.copy2(
+                full_path,
+                representative_path
+            )
+
+
+        except Exception as e:
+
+            print(
+                f"代表画像保存失敗: "
+                f"{representative_path} / {e}"
+            )
+
+
+# ============================================================
+# 既存レイアウトの代表画像がない場合も補完
+# ============================================================
+
+for layout in layout_groups:
+
+    representative_path = os.path.join(
+        LAYOUT_DIR,
+        layout["id"] + ".jpg"
+    )
+
+
+    if os.path.exists(
+        representative_path
+    ):
+        continue
+
+
+    for image_info in layout["images"]:
+
+        if not isinstance(
+            image_info,
+            dict
+        ):
+            continue
+
+
+        date = image_info.get(
+            "date"
+        )
+
+        filename = image_info.get(
+            "filename"
+        )
+
+
+        if not date or not filename:
+            continue
+
+
+        source_path = os.path.join(
+            DATA_DIR,
+            date,
+            filename
+        )
+
+
+        if os.path.exists(
+            source_path
+        ):
+
+            try:
+
+                shutil.copy2(
+                    source_path,
+                    representative_path
+                )
+
+                print(
+                    f"代表画像作成: "
+                    f"{layout['id']}.jpg"
+                )
+
+            except Exception as e:
+
+                print(
+                    f"代表画像作成失敗: "
+                    f"{layout['id']} / {e}"
+                )
+
+            break
 
 
 # ============================================================
@@ -1152,9 +1378,7 @@ for layout in layout_groups:
     output_layout_data[
         layout["id"]
     ] = {
-
         "images": layout["images"]
-
     }
 
 
@@ -1183,6 +1407,46 @@ print(
     f"検出したレイアウト数: "
     f"{len(layout_groups)}"
 )
+
+
+# ============================================================
+# レイアウト一覧表示
+# ============================================================
+
+print()
+
+print(
+    "============================================================"
+)
+
+print(
+    "レイアウト一覧"
+)
+
+print(
+    "============================================================"
+)
+
+
+for layout in layout_groups:
+
+    print(
+        f"{layout['id']} : "
+        f"{len(layout['images'])}枚"
+    )
+
+
+    for image_info in layout["images"]:
+
+        if isinstance(
+            image_info,
+            dict
+        ):
+
+            print(
+                f"    {image_info['date']} / "
+                f"{image_info['filename']}"
+            )
 
 
 # ============================================================
