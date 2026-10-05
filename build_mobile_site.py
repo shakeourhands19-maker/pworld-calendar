@@ -1,7 +1,10 @@
 import json
 import os
 import shutil
+import subprocess
 from datetime import datetime
+
+from PIL import Image
 
 DATA_DIR = "data"
 SITE_DIR = "site"
@@ -77,6 +80,66 @@ with open(os.path.join(SITE_DIR, "layouts.json"), "w", encoding="utf-8") as f:
     json.dump(layouts, f, ensure_ascii=False, indent=2)
 
 shutil.copy2(layout_path, os.path.join(SITE_DIR, "layout_index.json")) if os.path.isfile(layout_path) else None
+
+# ============================================================
+# OCR検索用インデックス
+# ============================================================
+
+ocr_path = os.path.join(DATA_DIR, "ocr_index.json")
+ocr_index = {}
+
+if os.path.isfile(ocr_path):
+    try:
+        with open(ocr_path, "r", encoding="utf-8") as f:
+            ocr_index = json.load(f)
+    except Exception:
+        ocr_index = {}
+
+for item in dates:
+    date = item["date"]
+    for image in item["images"]:
+        filename = image["filename"]
+        key = f"{date}/{filename}"
+        if key in ocr_index:
+            continue
+
+        source = os.path.join(DATA_DIR, date, filename)
+        if not os.path.isfile(source):
+            continue
+
+        try:
+            result = subprocess.run(
+                [
+                    "tesseract",
+                    source,
+                    "stdout",
+                    "-l",
+                    "jpn+eng",
+                    "--psm",
+                    "6",
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="ignore",
+                timeout=30,
+            )
+            ocr_index[key] = {
+                "date": date,
+                "filename": filename,
+                "url": image["url"],
+                "text": result.stdout or "",
+            }
+        except Exception as e:
+            print(f"OCR失敗: {key} / {e}")
+
+with open(ocr_path, "w", encoding="utf-8") as f:
+    json.dump(ocr_index, f, ensure_ascii=False, indent=2)
+
+with open(os.path.join(SITE_DIR, "ocr_index.json"), "w", encoding="utf-8") as f:
+    json.dump(ocr_index, f, ensure_ascii=False, indent=2)
+
+print(f"OCR検索インデックス: {len(ocr_index)}件")
 
 print(f"スマホ用ページを生成しました: {TODAY}")
 print(f"履歴日数: {len(dates)}")
