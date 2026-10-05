@@ -197,7 +197,6 @@ def create_ocr_images(
         image_path
     ).convert("RGB")
 
-
     # --------------------------------------------------------
     # 3倍に拡大
     # --------------------------------------------------------
@@ -211,7 +210,6 @@ def create_ocr_images(
         ),
         Image.Resampling.LANCZOS
     )
-
 
     ocr_images = []
 
@@ -315,37 +313,85 @@ def create_ocr_images(
 
 
     # ========================================================
-    # OCRパターン5～7
-    # RGBチャンネル分離
-    #
-    # 色付き文字の場合、
-    # グレースケール化すると背景と文字が
-    # 同じ明るさになってしまう場合がある。
-    #
-    # R / G / Bを別々にOCRすることで、
-    # 特定の色だけを強調できる。
+    # OCRパターン5
+    # 赤チャンネル
     # ========================================================
 
-    channels = image.split()
+    red = image.getchannel("R")
 
-    channel_names = [
-        "R",
-        "G",
-        "B"
-    ]
+    red = ImageEnhance.Contrast(
+        red
+    ).enhance(2.5)
 
-    for channel, channel_name in zip(
-        channels,
-        channel_names
-    ):
+    red = red.filter(
+        ImageFilter.SHARPEN
+    )
 
-        channel = ImageEnhance.Contrast(
-            channel
-        ).enhance(2.5)
+    path = (
+        base_name
+        + "_ocr_R.png"
+    )
 
-        channel = channel.filter(
-            ImageFilter.SHARPEN
-        )
+    red.save(path)
+
+    ocr_images.append(path)
+
+
+    # ========================================================
+    # OCRパターン6
+    # 緑チャンネル
+    # ========================================================
+
+    green = image.getchannel("G")
+
+    green = ImageEnhance.Contrast(
+        green
+    ).enhance(2.5)
+
+    green = green.filter(
+        ImageFilter.SHARPEN
+    )
+
+    path = (
+        base_name
+        + "_ocr_G.png"
+    )
+
+    green.save(path)
+
+    ocr_images.append(path)
+
+
+    # ========================================================
+    # OCRパターン7
+    # 青チャンネル
+    # ========================================================
+
+    blue = image.getchannel("B")
+
+    blue = ImageEnhance.Contrast(
+        blue
+    ).enhance(2.5)
+
+    blue = blue.filter(
+        ImageFilter.SHARPEN
+    )
+
+    path = (
+        base_name
+        + "_ocr_B.png"
+    )
+
+    blue.save(path)
+
+    ocr_images.append(path)
+
+
+    # ========================================================
+    # OCR画像一覧を返す
+    # ========================================================
+
+    return ocr_images
 
 
 
