@@ -121,7 +121,7 @@ def create_layout_signature(image_path):
         ).enhance(1.5)
 
         pixels = list(
-            canvas.getdata()
+            canvas.get_flattened_data()
         )
 
         if not pixels:
@@ -515,13 +515,29 @@ for i, image_url in enumerate(
 
 
     # --------------------------------------------------------
-    # OCR結果を必要なら確認できるようにする
+    # OCR結果をログに表示
     # --------------------------------------------------------
 
-    # print(
-    #     f"OCR: {ocr_text}"
-    # )
+    print()
+    print(
+        f"----- OCR結果: {filename} -----"
+    )
 
+    if ocr_text.strip():
+
+        print(
+            ocr_text.strip()
+        )
+
+    else:
+
+        print(
+            "(OCR結果なし)"
+        )
+
+    print(
+        "--------------------------------"
+    )
 
     # ========================================================
     # 除外判定
