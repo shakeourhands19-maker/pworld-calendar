@@ -11,14 +11,15 @@ on:
         required: true
         default: "2026"
       max_snapshots:
-        description: "ページスナップショット数"
+        description: "調査するページスナップショット数"
         required: true
-        default: "10"
+        default: "30"
 permissions:
   contents: read
 jobs:
   retry:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: リポジトリ取得
         uses: actions/checkout@v4
@@ -33,18 +34,22 @@ jobs:
           START_YEAR: ${{ inputs.start_year }}
           END_YEAR: ${{ inputs.end_year }}
           MAX_SNAPSHOTS: ${{ inputs.max_snapshots }}
-          MAX_IMAGES: "10"
+          MAX_IMAGES: "100"
         run: python historical_pworld.py
       - name: 画像URLごとのWayback履歴を再調査
         env:
           START_YEAR: ${{ inputs.start_year }}
           END_YEAR: ${{ inputs.end_year }}
-          MAX_IMAGES: "10"
-          MAX_CANDIDATES: "3"
+          MAX_IMAGES: "100"
+          MAX_CANDIDATES: "5"
+          MAX_RETRIES: "5"
         run: python historical_pworld_retry.py
       - name: 再発掘結果を保存
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: historical-pworld-retry
-          path: historical_probe_retry
+          path: |
+            historical_probe
+            historical_probe_retry
           retention-days: 14
