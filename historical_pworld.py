@@ -69,7 +69,7 @@ def original_url(src):
     if not src:
         return None
     match = re.search(
-        r"https?://web\\.archive\\.org/web/\\d+(?:id_)?/(https?://.+)$", src
+        r"https?://web\.archive\.org/web/\d+(?:id_)?/(https?://.+)$", src
     )
     if match:
         return match.group(1)
