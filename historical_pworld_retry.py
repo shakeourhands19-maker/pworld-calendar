@@ -60,7 +60,7 @@ def archive_url(timestamp, url):
 
 def clean(url):
     # P-WORLD appends a numeric cache-busting query. Search both forms below.
-    return re.sub(r"\\?\\d+$", "", url or "")
+    return re.sub(r"\?\d+$", "", url or "")
 
 def filename(index, url):
     name = Path(urlparse(url).path).name or "image.jpg"
