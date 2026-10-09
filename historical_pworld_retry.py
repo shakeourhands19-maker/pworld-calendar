@@ -22,6 +22,7 @@ MAX_RETRIES = int(os.getenv("MAX_RETRIES", "5"))
 session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0 (compatible; HistoricalPosterResearch/1.0)"})
 
+
 def request_with_retry(url, *, params=None, timeout=30, attempts=MAX_RETRIES):
     last_error = None
     for attempt in range(attempts):
@@ -31,7 +32,7 @@ def request_with_retry(url, *, params=None, timeout=30, attempts=MAX_RETRIES):
                 raise requests.HTTPError(f"temporary HTTP {response.status_code}", response=response)
             response.raise_for_status()
             return response
-        except (requests.RequestException, requests.Timeout) as exc:
+        except requests.RequestException as exc:
             last_error = exc
             if attempt + 1 >= attempts:
                 break
@@ -39,6 +40,7 @@ def request_with_retry(url, *, params=None, timeout=30, attempts=MAX_RETRIES):
             print(f"    一時エラー、{delay}秒後に再試行 ({attempt + 2}/{attempts}): {exc}", flush=True)
             time.sleep(delay)
     raise last_error
+
 
 def cdx(url):
     params = {
@@ -55,25 +57,64 @@ def cdx(url):
     rows = response.json()
     return [dict(zip(rows[0], row)) for row in rows[1:]] if rows else []
 
+
 def archive_url(timestamp, url):
     return f"https://web.archive.org/web/{timestamp}id_/{url}"
 
+
 def clean(url):
-    # P-WORLD appends a numeric cache-busting query. Search both forms below.
+    # P-WORLD appends a numeric cache-busting query; ignore it for deduplication.
     return re.sub(r"\?\d+$", "", url or "")
+
 
 def filename(index, url):
     name = Path(urlparse(url).path).name or "image.jpg"
     return f"{index:04d}_{re.sub(r'[^0-9A-Za-z._-]+', '_', name)}"
 
-records = json.loads(INPUT.read_text(encoding="utf-8"))
+
+def save_checkpoint(records, ok, failed, cdx_failed):
+    (OUT / "index.json").write_text(
+        json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    (OUT / "summary.json").write_text(
+        json.dumps({
+            "input_images": len(records),
+            "processed": ok + failed,
+            "recovered": ok,
+            "failed": failed,
+            "cdx_all_failed": cdx_failed,
+            "start_year": START_YEAR,
+            "end_year": END_YEAR,
+            "max_candidates": MAX_CANDIDATES,
+            "max_retries": MAX_RETRIES,
+            "checkpoint": True,
+        }, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+raw_records = json.loads(INPUT.read_text(encoding="utf-8"))
+
+# Page snapshots often contain the same image URL with different cache-busting
+# numbers. Process each actual image path only once to avoid wasting requests.
+records = []
+seen_urls = set()
+for record in raw_records:
+    original = record.get("original_url", "")
+    key = clean(original)
+    if not key or key in seen_urls:
+        continue
+    seen_urls.add(key)
+    records.append(record)
+
 records = records[:MAX_IMAGES]
 
 ok = failed = cdx_failed = 0
 print("=" * 60)
-print(f"画像URL個別再発掘テスト: {len(records)}枚")
+print(f"収集URL: {len(raw_records)}件 / 重複除去後: {len(records)}枚")
 print(f"候補確認: 最大{MAX_CANDIDATES}件/URL")
 print(f"一時エラー再試行: 最大{MAX_RETRIES}回")
+print("途中経過を1件ごとに保存します")
 print("=" * 60)
 
 for index, record in enumerate(records, 1):
@@ -81,7 +122,6 @@ for index, record in enumerate(records, 1):
     cleaned = clean(original)
     print(f"[{index}/{len(records)}] {cleaned}", flush=True)
 
-    # Query付きURLとクエリなしURLの両方を調べ、重複候補をまとめる。
     variants = list(dict.fromkeys([original, cleaned]))
     candidates = []
     seen_timestamps = set()
@@ -112,7 +152,9 @@ for index, record in enumerate(records, 1):
     for cap, variant in candidates:
         timestamp = cap["timestamp"]
         try:
-            response = request_with_retry(archive_url(timestamp, variant), timeout=30, attempts=3)
+            response = request_with_retry(
+                archive_url(timestamp, variant), timeout=30, attempts=3
+            )
             content_type = response.headers.get("content-type", "").lower()
             if not content_type.startswith("image/"):
                 print(f"    候補 {timestamp}: 画像ではないためスキップ", flush=True)
@@ -128,6 +170,7 @@ for index, record in enumerate(records, 1):
                 "recovered_content_type": content_type,
             })
             record.pop("recovery_failed", None)
+            record.pop("retry_error", None)
             ok += 1
             recovered = True
             print(f"  OK: {timestamp} / {len(response.content):,} bytes", flush=True)
@@ -141,26 +184,11 @@ for index, record in enumerate(records, 1):
         failed += 1
         print("  NG", flush=True)
 
-    # Waybackへの連続アクセスを抑え、503を起こしにくくする。
+    # Save after every URL so partial results survive a canceled workflow.
+    save_checkpoint(records, ok, failed, cdx_failed)
     time.sleep(2)
 
-(OUT / "index.json").write_text(
-    json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
-)
-(OUT / "summary.json").write_text(
-    json.dumps({
-        "input_images": len(records),
-        "recovered": ok,
-        "failed": failed,
-        "cdx_all_failed": cdx_failed,
-        "start_year": START_YEAR,
-        "end_year": END_YEAR,
-        "max_candidates": MAX_CANDIDATES,
-        "max_retries": MAX_RETRIES,
-    }, ensure_ascii=False, indent=2),
-    encoding="utf-8",
-)
-
+save_checkpoint(records, ok, failed, cdx_failed)
 print("=" * 60)
 print(f"完了: {len(records)}件中 {ok}件取得 / {failed}件失敗")
 print(f"CDX全滅: {cdx_failed}件")
