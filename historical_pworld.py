@@ -14,22 +14,53 @@ START_YEAR = os.getenv("START_YEAR", "2024")
 END_YEAR = os.getenv("END_YEAR", "2026")
 MAX_SNAPSHOTS = int(os.getenv("MAX_SNAPSHOTS", "300"))
 MAX_IMAGES = int(os.getenv("MAX_IMAGES", "500"))
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "5"))
 
 OUT = Path("historical_probe")
 IMG = OUT / "images"
 IMG.mkdir(parents=True, exist_ok=True)
 
-s = requests.Session()
-s.headers.update({"User-Agent": "Mozilla/5.0 Chrome/154.0 Safari/537.36"})
+session = requests.Session()
+session.headers.update({"User-Agent": "Mozilla/5.0 (compatible; HistoricalPosterResearch/1.0)"})
+
+def get_with_retry(url, params=None, timeout=45, attempts=MAX_RETRIES):
+    last_error = None
+    for attempt in range(attempts):
+        try:
+            response = session.get(url, params=params, timeout=timeout)
+            if response.status_code in (429, 500, 502, 503, 504):
+                raise requests.HTTPError(
+                    f"一時的なHTTP {response.status_code}", response=response
+                )
+            response.raise_for_status()
+            return response
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt + 1 >= attempts:
+                break
+            delay = min(3 * (2 ** attempt), 30)
+            print(
+                f"  一時エラー: {exc}\n"
+                f"  {delay}秒待って再試行します ({attempt + 2}/{attempts})",
+                flush=True,
+            )
+            time.sleep(delay)
+    raise last_error
 
 def cdx(url):
-    p = {"url": url, "output": "json", "filter": "statuscode:200",
-         "from": START_YEAR, "to": END_YEAR, "collapse": "digest",
-         "fl": "timestamp,original,mimetype,statuscode,digest", "limit": 1000}
-    r = s.get(CDX_URL, params=p, timeout=60)
-    r.raise_for_status()
-    rows = r.json()
-    return [dict(zip(rows[0], x)) for x in rows[1:]] if rows else []
+    params = {
+        "url": url,
+        "output": "json",
+        "filter": "statuscode:200",
+        "from": START_YEAR,
+        "to": END_YEAR,
+        "collapse": "digest",
+        "fl": "timestamp,original,mimetype,statuscode,digest",
+        "limit": 500,
+    }
+    response = get_with_retry(CDX_URL, params=params, timeout=60)
+    rows = response.json()
+    return [dict(zip(rows[0], row)) for row in rows[1:]] if rows else []
 
 def archive_url(ts, url):
     return f"https://web.archive.org/web/{ts}id_/{url}"
@@ -37,93 +68,111 @@ def archive_url(ts, url):
 def original_url(src):
     if not src:
         return None
-    m = re.search(r"https?://web\.archive\.org/web/\d+(?:id_)?/(https?://.+)$", src)
-    if m:
-        return m.group(1)
+    match = re.search(
+        r"https?://web\\.archive\\.org/web/\\d+(?:id_)?/(https?://.+)$", src
+    )
+    if match:
+        return match.group(1)
     return urljoin(PAGE_URL, src)
 
 def target(url):
     if not url:
         return False
-    p = urlparse(url)
-    return p.hostname == "idn.p-world.co.jp" and "img_warehouse" in p.path
+    parsed = urlparse(url)
+    return parsed.hostname == "idn.p-world.co.jp" and "img_warehouse" in parsed.path
 
 def filename(url):
-    n = Path(urlparse(url).path).name or "image.jpg"
-    return re.sub(r"[^0-9A-Za-z._-]+", "_", n)
+    name = Path(urlparse(url).path).name or "image.jpg"
+    return re.sub(r"[^0-9A-Za-z._-]+", "_", name)
 
 print("=" * 60)
 print("P-WORLD 過去ポスター発掘テスト")
 print("=" * 60)
 print(f"対象期間: {START_YEAR}～{END_YEAR}")
+print(f"503等の再試行: 最大{MAX_RETRIES}回")
 
-snaps = sorted(cdx(PAGE_URL), key=lambda x: x["timestamp"], reverse=True)[:MAX_SNAPSHOTS]
+try:
+    snaps = sorted(cdx(PAGE_URL), key=lambda x: x["timestamp"], reverse=True)[:MAX_SNAPSHOTS]
+except Exception as exc:
+    print(f"ページ履歴一覧の取得に失敗しました: {exc}")
+    print("時間を置いて再実行してください。既存カレンダーは変更していません。")
+    raise
+
 print(f"ページスナップショット: {len(snaps)}件")
 
 records, seen = [], set()
 
 for i, snap in enumerate(snaps, 1):
-    ts = snap["timestamp"]
-    day = f"{ts[:4]}-{ts[4:6]}-{ts[6:8]}"
-    print(f"[{i}/{len(snaps)}] {day}")
+    timestamp = snap["timestamp"]
+    day = f"{timestamp[:4]}-{timestamp[4:6]}-{timestamp[6:8]}"
+    print(f"[{i}/{len(snaps)}] {day}", flush=True)
     try:
-        r = s.get(archive_url(ts, snap["original"]), timeout=60)
-        r.raise_for_status()
-    except Exception as e:
-        print(f"  ページ取得失敗: {e}")
+        response = get_with_retry(archive_url(timestamp, snap["original"]), timeout=45, attempts=3)
+    except Exception as exc:
+        print(f"  ページ取得失敗: {exc}", flush=True)
+        time.sleep(1.5)
         continue
 
-    soup = BeautifulSoup(r.text, "html.parser")
-    text = soup.get_text(" ", strip=True)
+    soup = BeautifulSoup(response.text, "html.parser")
+    page_text = soup.get_text(" ", strip=True)
 
     for img in soup.find_all("img"):
-        u = original_url(img.get("src") or img.get("data-src") or img.get("data-original"))
-        if not target(u) or u in seen:
+        src = img.get("src") or img.get("data-src") or img.get("data-original")
+        url = original_url(src)
+        if not target(url) or url in seen:
             continue
-        seen.add(u)
+        seen.add(url)
         records.append({
             "capture_date": day,
-            "snapshot_timestamp": ts,
-            "original_url": u,
-            "archived_url": archive_url(ts, u),
+            "snapshot_timestamp": timestamp,
+            "original_url": url,
+            "archived_url": archive_url(timestamp, url),
             "alt": img.get("alt", ""),
-            "page_text_excerpt": text[:1000],
+            "page_text_excerpt": page_text[:1000],
         })
         if len(records) >= MAX_IMAGES:
             break
     if len(records) >= MAX_IMAGES:
         break
-    time.sleep(0.2)
+    time.sleep(1.0)
 
 print(f"ユニーク画像URL: {len(records)}件")
-ok = fail = 0
+ok = failed = 0
 
-for i, rec in enumerate(records, 1):
-    d = IMG / rec["capture_date"]
-    d.mkdir(parents=True, exist_ok=True)
-    path = d / f"{i:04d}_{filename(rec['original_url'])}"
+for i, record in enumerate(records, 1):
+    folder = IMG / record["capture_date"]
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{i:04d}_{filename(record['original_url'])}"
     try:
-        r = s.get(rec["archived_url"], timeout=60)
-        r.raise_for_status()
-        if not r.headers.get("content-type", "").startswith("image/"):
+        response = get_with_retry(record["archived_url"], timeout=45, attempts=3)
+        if not response.headers.get("content-type", "").lower().startswith("image/"):
             raise RuntimeError("画像レスポンスではありません")
-        path.write_bytes(r.content)
-        rec["local_file"] = str(path)
+        path.write_bytes(response.content)
+        record["local_file"] = str(path)
         ok += 1
-        print(f"  OK {i}/{len(records)}")
-    except Exception as e:
-        rec["download_error"] = str(e)
-        fail += 1
-        print(f"  NG {i}/{len(records)}: {e}")
-    time.sleep(0.15)
+        print(f"  OK {i}/{len(records)}", flush=True)
+    except Exception as exc:
+        record["download_error"] = str(exc)
+        failed += 1
+        print(f"  NG {i}/{len(records)}: {exc}", flush=True)
+    time.sleep(1.0)
 
-with open(OUT / "index.json", "w", encoding="utf-8") as f:
-    json.dump(records, f, ensure_ascii=False, indent=2)
-with open(OUT / "summary.json", "w", encoding="utf-8") as f:
-    json.dump({"page_snapshots": len(snaps), "unique_image_urls": len(records),
-               "downloaded_images": ok, "failed_images": fail},
-              f, ensure_ascii=False, indent=2)
+(OUT / "index.json").write_text(
+    json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
+)
+(OUT / "summary.json").write_text(
+    json.dumps({
+        "page_snapshots": len(snaps),
+        "unique_image_urls": len(records),
+        "downloaded_images": ok,
+        "failed_images": failed,
+        "start_year": START_YEAR,
+        "end_year": END_YEAR,
+        "max_retries": MAX_RETRIES,
+    }, ensure_ascii=False, indent=2),
+    encoding="utf-8",
+)
 
 print("=" * 60)
-print(f"完了: スナップショット {len(snaps)} / 画像 {len(records)} / 成功 {ok} / 失敗 {fail}")
+print(f"完了: スナップショット {len(snaps)} / 画像 {len(records)} / 成功 {ok} / 失敗 {failed}")
 print("今回は既存カレンダーへ登録していません。")
