@@ -28,6 +28,9 @@ EXCLUDED_FILE = "excluded_urls.json"
 # 0 = 全履歴
 MAX_NEW_DAYS = 3
 
+# 10/3の誤取得を修復するため、確認済みURLから再取得
+FORCE_REPORTS = {"2026-10-03": "https://min-repo.com/3389466/"}
+
 # 待機時間
 PAGE_WAIT = 5
 REPORT_WAIT = 5
@@ -761,15 +764,18 @@ def main():
             })
 
         # 日付順
-        candidates.sort(
-            key=lambda x: x["date"]
-        )
+        candidates.sort(key=lambda x: x["date"])
 
-        # MAX_NEW_DAYS
         if MAX_NEW_DAYS > 0:
-            candidates = candidates[
-                -MAX_NEW_DAYS:
-            ]
+            candidates = candidates[-MAX_NEW_DAYS:]
+
+        # 修復対象は既存データがあっても指定URLから再取得する
+        for forced_date, forced_url in FORCE_REPORTS.items():
+            forced_day = datetime.strptime(forced_date, "%Y-%m-%d").date()
+            candidates = [x for x in candidates if x["date"].isoformat() != forced_date]
+            candidates.append({"url": forced_url, "date": forced_day})
+
+        candidates.sort(key=lambda x: x["date"])
 
         print(
             f"新規取得候補 : {len(candidates)}"
