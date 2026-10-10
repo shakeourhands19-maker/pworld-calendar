@@ -113,15 +113,21 @@ def clean_number(value):
 
 def is_target_store(soup):
 
+    # ページ全体の本文には関連記事・リンクなど別店舗名も混在するため、
+    # 本文内に店舗名があるだけでは対象店舗と判定しない。
     title = soup.title.get_text(" ", strip=True) if soup.title else ""
 
     if STORE_NAME in title:
         return True
 
-    # タイトルに店舗名がない場合だけ本文も確認
-    text = soup.get_text(" ", strip=True)
+    # タイトルに店舗名がないページは、記事の見出しだけを確認する。
+    # 任意の本文やサイドバーに店舗名が含まれるだけのページは除外する。
+    for selector in ("h1", ".entry-title", "article h2"):
+        heading = soup.select_one(selector)
+        if heading and STORE_NAME in heading.get_text(" ", strip=True):
+            return True
 
-    return STORE_NAME in text
+    return False
 
 
 # ============================================================
