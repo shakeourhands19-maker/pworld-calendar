@@ -39,6 +39,51 @@ for date in sorted(os.listdir(DATA_DIR), reverse=True):
     if images:
         dates.append({"date": date, "images": images})
 
+# ============================================================
+# index.json の手動登録画像もスマホ用サイトへ取り込む
+# 画像が data/日付/ファイル名 にない場合は data/直下を参照する
+# ============================================================
+
+index_path = os.path.join(DATA_DIR, "index.json")
+if os.path.isfile(index_path):
+    with open(index_path, "r", encoding="utf-8") as f:
+        date_index = json.load(f)
+
+    date_map = {item["date"]: item for item in dates}
+    for date, filenames in date_index.items():
+        if not isinstance(filenames, list):
+            continue
+
+        item = date_map.get(date)
+        if item is None:
+            item = {"date": date, "images": []}
+            dates.append(item)
+            date_map[date] = item
+
+        site_date_dir = os.path.join(SITE_DIR, "images", date)
+        os.makedirs(site_date_dir, exist_ok=True)
+
+        for filename in filenames:
+            if not isinstance(filename, str):
+                continue
+            if any(img["filename"] == filename for img in item["images"]):
+                continue
+
+            dated_source = os.path.join(DATA_DIR, date, filename)
+            root_source = os.path.join(DATA_DIR, filename)
+            source = dated_source if os.path.isfile(dated_source) else root_source
+            if not os.path.isfile(source):
+                print(f"index.json の画像が見つかりません: {date}/{filename}")
+                continue
+
+            shutil.copy2(source, os.path.join(site_date_dir, filename))
+            item["images"].append({
+                "filename": filename,
+                "url": f"images/{date}/{filename}"
+            })
+
+    dates.sort(key=lambda x: x["date"], reverse=True)
+
 today_images = next((x["images"] for x in dates if x["date"] == TODAY), [])
 with open(os.path.join(SITE_DIR, "today.json"), "w", encoding="utf-8") as f:
     json.dump({"date": TODAY, "images": today_images}, f, ensure_ascii=False, indent=2)
