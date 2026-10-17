@@ -92,20 +92,7 @@ print(f"対象期間: {START_YEAR}～{END_YEAR}")
 print(f"503等の再試行: 最大{MAX_RETRIES}回")
 
 try:
-    all_snaps = sorted(cdx(PAGE_URL), key=lambda x: x["timestamp"])
-    if len(all_snaps) > MAX_SNAPSHOTS:
-        # Spread the sample across the entire requested period instead of
-        # selecting only the newest snapshots and missing older posters.
-        if MAX_SNAPSHOTS <= 1:
-            snaps = [all_snaps[-1]]
-        else:
-            indexes = {
-                round(i * (len(all_snaps) - 1) / (MAX_SNAPSHOTS - 1))
-                for i in range(MAX_SNAPSHOTS)
-            }
-            snaps = [all_snaps[i] for i in sorted(indexes)]
-    else:
-        snaps = all_snaps
+    snaps = sorted(cdx(PAGE_URL), key=lambda x: x["timestamp"], reverse=True)[:MAX_SNAPSHOTS]
 except Exception as exc:
     print(f"ページ履歴一覧の取得に失敗しました: {exc}")
     print("時間を置いて再実行してください。既存カレンダーは変更していません。")
