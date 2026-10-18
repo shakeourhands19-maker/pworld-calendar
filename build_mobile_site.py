@@ -3,12 +3,13 @@ import os
 import shutil
 import subprocess
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from PIL import Image
 
 DATA_DIR = "data"
 SITE_DIR = "site"
-TODAY = datetime.now().strftime("%Y-%m-%d")
+TODAY = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d")
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 os.makedirs(SITE_DIR, exist_ok=True)
