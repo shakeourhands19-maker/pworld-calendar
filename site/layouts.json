@@ -60,7 +60,7 @@
   {
     "id": "layout_005",
     "count": 4,
-    "representative": "images/2026-10-05/06.jpg",
+    "representative": "images/2026-09-15/1791605467276.jpg",
     "images": [
       {
         "date": "2026-09-15",
@@ -87,7 +87,7 @@
   {
     "id": "layout_006",
     "count": 2,
-    "representative": "images/2026-10-07/06.jpg",
+    "representative": "images/2026-09-17/1791605451935.jpg",
     "images": [
       {
         "date": "2026-09-17",
@@ -144,9 +144,14 @@
   },
   {
     "id": "layout_010",
-    "count": 1,
-    "representative": "images/2026-10-13/06.jpg",
+    "count": 2,
+    "representative": "images/2026-09-12/1791605498577.jpg",
     "images": [
+      {
+        "date": "2026-09-12",
+        "filename": "1791605498577.jpg",
+        "url": "images/2026-09-12/1791605498577.jpg"
+      },
       {
         "date": "2026-10-13",
         "filename": "06.jpg",
@@ -199,18 +204,6 @@
         "date": "2026-09-11",
         "filename": "1791605506766.jpg",
         "url": "images/2026-09-11/1791605506766.jpg"
-      }
-    ]
-  },
-  {
-    "id": "layout_015",
-    "count": 1,
-    "representative": "images/2026-09-12/1791605498577.jpg",
-    "images": [
-      {
-        "date": "2026-09-12",
-        "filename": "1791605498577.jpg",
-        "url": "images/2026-09-12/1791605498577.jpg"
       }
     ]
   },
