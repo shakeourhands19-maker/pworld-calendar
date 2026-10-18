@@ -5,6 +5,7 @@ import subprocess
 import json
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from urllib.parse import urljoin
 
 import requests
@@ -636,7 +637,7 @@ print(
 # 今日の日付
 # ============================================================
 
-today = datetime.now().strftime(
+today = datetime.now(ZoneInfo("Asia/Tokyo")).strftime(
     "%Y-%m-%d"
 )
 
