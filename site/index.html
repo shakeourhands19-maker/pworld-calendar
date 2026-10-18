@@ -34,7 +34,7 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 .search-result img{width:100%}
 .search-result button{border:0;background:#fff;padding:0;width:100%;text-align:left}
 .minrepo-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}.minrepo-stat{background:#f7f7f7;border-radius:8px;padding:9px;font-size:13px}.minrepo-stat strong{display:block;font-size:16px;margin-top:2px}
-.minrepo-table{width:100%;border-collapse:collapse;font-size:12px}.minrepo-table th,.minrepo-table td{border-bottom:1px solid #eee;padding:6px 4px;text-align:right;white-space:nowrap}.minrepo-table th:first-child,.minrepo-table td:first-child{text-align:left;white-space:normal}.section-title{margin:14px 0 7px;font-size:16px}
+.minrepo-table{width:100%;border-collapse:collapse;font-size:12px}.minrepo-table th,.minrepo-table td{border-bottom:1px solid #eee;padding:6px 4px;text-align:right;white-space:nowrap}.minrepo-table th:first-child,.minrepo-table td:first-child{text-align:left;white-space:normal}.section-title{margin:14px 0 7px;font-size:16px}\n.island-label{display:block;font-size:14px;font-weight:650;margin:12px 0 6px}.island-input{width:100%;border:1px solid #ddd;border-radius:8px;padding:10px;font:14px/1.5 ui-monospace,monospace;resize:vertical}.island-actions{display:flex;gap:8px;margin-top:10px}.island-actions button{border:1px solid #ddd;background:#fff;border-radius:8px;padding:9px 12px}.island-date-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.island-date-row input{border:1px solid #ddd;border-radius:8px;padding:8px}.island-row{display:flex;gap:5px;overflow-x:auto;padding:5px 0 9px}.island-row-label{font-size:11px;color:#777;margin-top:8px}.island-slot{flex:0 0 72px;min-height:82px;border:1px solid #ddd;border-radius:8px;background:#f8f8f8;padding:6px 3px;text-align:center;font-size:12px;overflow-wrap:anywhere}.island-slot strong{display:block;font-size:14px;margin:3px 0}.island-slot .slot-machine{font-size:10px;color:#555}.island-slot .slot-diff{font-weight:700;margin-top:3px}.island-slot.positive{background:#e1f3e5;border-color:#a6d7b0}.island-slot.negative{background:#fbe6e6;border-color:#e5b4b4}.island-slot.selected{outline:3px solid #555}
 @media(min-width:600px){.grid{grid-template-columns:repeat(3,1fr)}.day{min-height:64px}.minrepo-summary{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
@@ -43,6 +43,7 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 <nav>
 <button id="tabCalendar" class="active" onclick="showTab('calendar')">カレンダー</button>
 <button id="tabLayouts" onclick="showTab('layouts')">レイアウト</button>
+<button id="tabIsland" onclick="showTab('island')">島図</button>
 </nav>
 <main>
 <section id="calendar">
@@ -57,13 +58,30 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 <div class="card"><h2>基本レイアウト</h2><div class="layout-sort"><span>並び順</span><select id="layoutSort" onchange="renderLayoutList()"><option value="latest_desc">最終使用順（新）</option><option value="latest_asc">最終使用順（古）</option><option value="count_desc">使用回数順（多）</option><option value="count_asc">使用回数順（少）</option><option value="first_desc">初登場順（新）</option><option value="first_asc">初登場順（古）</option></select></div><div class="search-box"><input id="ocrSearchInput" type="search" placeholder="ポスターの文字を検索（例：周年、OPEN）"><button onclick="searchOCR()">検索</button></div><div id="layoutList" class="grid">読み込み中…</div></div>
 <div id="layoutView"></div><div id="ocrView"></div>
 </section>
+<section id="island" class="hidden">
+<div class="card">
+<h2>島図・台番号</h2>
+<p class="small">まずは台番号の並びを調べて、島ごとに入力します。1行が1列（島）です。台番号は左から右へ、カンマ区切りで入力してください。</p>
+<label class="island-label" for="islandRows">島の並び（1行に1島）</label>
+<textarea id="islandRows" class="island-input" rows="5" placeholder="例：551,552,553,554&#10;561,562,563,564"></textarea>
+<label class="island-label" for="islandMachines">機種メモ（1行に「台番号,機種名」）</label>
+<textarea id="islandMachines" class="island-input" rows="4" placeholder="例：551,マイジャグラーV&#10;552,マイジャグラーV"></textarea>
+<div class="island-actions"><button onclick="saveIslandConfig()">配置を保存</button><button onclick="clearIslandConfig()">入力をクリア</button></div>
+<p id="islandSaveStatus" class="small">配置はこのブラウザー内に保存されます。</p>
+</div>
+<div class="card">
+<div class="island-date-row"><label for="islandDate">データ日付</label><input id="islandDate" type="date" onchange="renderIsland()"></div>
+<div id="islandMap"><p class="small">台番号を入力して「配置を保存」を押してください。</p></div>
+<div id="islandDetail"></div>
+</div>
+</section>
 </main>
 <div id="imageModal" class="modal hidden" onclick="closeImageModal()"><button class="modal-close" onclick="event.stopPropagation();closeImageModal()">×</button><img id="modalImage" src="" alt="" onclick="event.stopPropagation()"></div>
 <script>
 let dates=[],layouts=[],minrepoDates={},ocrIndex={};let calendarMonth=new Date();calendarMonth.setDate(1);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function localDateKey(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function showTab(tab){['calendar','layouts'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==tab));['tabCalendar','tabLayouts'].forEach(x=>document.getElementById(x).classList.remove('active'));document.getElementById('tab'+tab[0].toUpperCase()+tab.slice(1)).classList.add('active');if(tab==='calendar')renderCalendar()}
+function showTab(tab){['calendar','layouts','island'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==tab));['tabCalendar','tabLayouts','tabIsland'].forEach(x=>document.getElementById(x).classList.remove('active'));document.getElementById('tab'+tab[0].toUpperCase()+tab.slice(1)).classList.add('active');if(tab==='calendar')renderCalendar();if(tab==='island')initIsland()}
 function imageHtml(x){return '<div><button class="image-button" onclick="openImageModal(\''+esc(x.url)+'\');event.stopPropagation()"><div class="image-date">'+esc(x.filename)+'</div><img src="'+esc(x.url)+'" alt=""></button></div>'}
 function renderImages(items){return items.length?'<div class="grid">'+items.map(imageHtml).join('')+'</div>':'<p class="small">告知画像はありません。</p>'}
 function findLayoutForImage(date,filename){return layouts.find(l=>(l.images||[]).some(x=>x.date===date&&x.filename===filename))}
@@ -99,6 +117,15 @@ async function openCalendarDate(date){
  try{const r=await fetch('minrepo_data/'+date+'.json?'+Date.now());if(!r.ok)throw new Error('not found');const x=await r.json();document.getElementById('minrepoView').innerHTML=renderMinrepo(x)}
  catch(e){document.getElementById('minrepoView').innerHTML='<h3>みんレポ</h3><p class="small">この日のみんレポデータはありません。</p>'}
 }
+let islandInitialized=false,islandSelected=null,islandData=null;
+function islandConfig(){try{return JSON.parse(localStorage.getItem('pworldIslandConfig')||'{"rows":"","machines":""}')}catch(e){return {rows:'',machines:''}}}
+function initIsland(){if(!islandInitialized){const c=islandConfig();document.getElementById('islandRows').value=c.rows;document.getElementById('islandMachines').value=c.machines;document.getElementById('islandDate').value=localDateKey();islandInitialized=true}renderIsland()}
+function saveIslandConfig(){const rows=document.getElementById('islandRows').value;const machines=document.getElementById('islandMachines').value;localStorage.setItem('pworldIslandConfig',JSON.stringify({rows,machines}));document.getElementById('islandSaveStatus').textContent='配置をこのブラウザーに保存しました。';islandSelected=null;renderIsland()}
+function clearIslandConfig(){if(!confirm('島図の入力内容をクリアしますか？'))return;document.getElementById('islandRows').value='';document.getElementById('islandMachines').value='';saveIslandConfig()}
+function islandMachineMap(){const out={};document.getElementById('islandMachines').value.split(/\r?\n/).forEach(line=>{const i=line.indexOf(',');if(i>0){const n=line.slice(0,i).trim(),name=line.slice(i+1).trim();if(n&&name)out[n]=name}});return out}
+async function renderIsland(){const map=document.getElementById('islandMap'),detail=document.getElementById('islandDetail');const rows=document.getElementById('islandRows').value.split(/\r?\n/).map(x=>x.split(/[,、\s]+/).map(n=>n.trim()).filter(Boolean)).filter(x=>x.length);if(!rows.length){map.innerHTML='<p class="small">島の並びを入力して「配置を保存」を押してください。</p>';detail.innerHTML='';return}const date=document.getElementById('islandDate').value;let data=null;try{const r=await fetch('minrepo_data/'+date+'.json?'+Date.now());if(r.ok)data=await r.json()}catch(e){}islandData=data;const machineMap=islandMachineMap();const numbers=data?(data.number_data||data.machine_numbers||[]):[];const machines=data?(data.machine_data||data.machines||[]):[];const byNumber={};numbers.forEach(x=>{const n=String(x['台番']??x['台番号']??x.machine_number??'');if(n)byNumber[n]=x});const byMachine={};machines.forEach(x=>{const n=String(x['機種']??x.machine??'');if(n)byMachine[n]=x});let html='';rows.forEach((row,i)=>{html+='<div class="island-row-label">島 '+(i+1)+'</div><div class="island-row">'+row.map(n=>{const v=byNumber[n];const name=machineMap[n]||v?.['機種']||'';const d=v?(v['差枚']??v.diff):null;const cls=['island-slot',islandSelected===n?'selected':'',d!=null&&Number(d)>0?'positive':'',d!=null&&Number(d)<0?'negative':''].filter(Boolean).join(' ');return '<button class="'+cls+'" onclick="selectIslandSlot(\''+esc(n)+'\')">台番号<strong>'+esc(n)+'</strong><span class="slot-machine">'+esc(name||'機種未登録')+'</span>'+(d!=null?'<span class="slot-diff">'+(Number(d)>0?'+':'')+formatNum(d)+'枚</span>':'')+'</button>'}).join('')+'</div>'});map.innerHTML=html;if(islandSelected)showIslandDetail(islandSelected,byNumber,byMachine,machineMap,data);else detail.innerHTML='<p class="small">台をタップすると、その日のデータや登録した機種メモを確認できます。</p>'}
+function selectIslandSlot(n){islandSelected=n;renderIsland()}
+function showIslandDetail(n,byNumber,byMachine,machineMap,data){const detail=document.getElementById('islandDetail');const v=byNumber[n];const name=machineMap[n]||v?.['機種']||'';const m=name?byMachine[name]:null;let html='<hr><h3>台番号 '+esc(n)+'</h3>';if(name)html+='<p><strong>'+esc(name)+'</strong></p>';else html+='<p class="small">機種名は「機種メモ」に登録できます。</p>';if(v){html+='<p>当日差枚：<strong>'+formatNum(v['差枚']??v.diff)+'枚</strong> ／ G数：'+formatNum(v['G数']??v.games)+'</p><p class="small">みんレポの台番号別データ</p>'}else if(m){html+='<p>機種平均差枚：<strong>'+formatNum(m['平均差枚']??m.average_diff)+'枚</strong></p><p>平均G数：'+formatNum(m['平均G数']??m.average_games)+' ／ 勝率：'+esc(m['勝率']??m.win_rate??'-')+' ／ 出率：'+esc(m['出率']??m.payout_rate??'-')+'</p><p class="small">※これは台個別の成績ではなく、機種全体の平均です。</p>'}else html+='<p class="small">'+(data?'この日は台番号別データがない台です。機種名を登録すると、機種全体の平均を表示できます。':'この日付のみんレポデータはありません。')+'</p>';if(data?.url)html+='<p><a href="'+esc(data.url)+'" target="_blank" rel="noopener">みんレポの元データを開く</a></p>';detail.innerHTML=html}
 function openLayout(id){const l=layouts.find(x=>x.id===id);if(!l)return;const images=[...(l.images||[])].sort((a,b)=>b.date.localeCompare(a.date));const first=images[0]?.date||'';const last=images[images.length-1]?.date||'';const html=images.length?'<div class="grid">'+images.map(x=>'<div><button type="button" class="image-button" onclick="openLayoutImage(\''+x.date+'\')"><div class="image-date">'+esc(x.date)+'</div><img src="'+esc(x.url)+'" alt=""></button></div>').join('')+'</div>':'<p class="small">画像はありません。</p>';document.getElementById('layoutView').innerHTML='<div class="card"><h2>このレイアウトの過去画像</h2><p class="small">使用回数：'+images.length+'回　初登場：'+esc(last)+'　最終使用：'+esc(first)+'</p>'+html+'</div>';window.scrollTo({top:document.getElementById('layoutView').offsetTop-80,behavior:'smooth'})}
 function openLayoutImage(date){showTab('calendar');const y=Number(date.slice(0,4)),m=Number(date.slice(5,7))-1;calendarMonth=new Date(y,m,1);renderCalendar();setTimeout(()=>openCalendarDate(date),0)}
 function layoutDates(l){
