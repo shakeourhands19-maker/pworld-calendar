@@ -81,16 +81,16 @@ function renderMinrepo(x){
  const avgGames=o.average_games??o['平均G数'];
  const winRate=o.win_rate??o['勝率'];
  const summary='<div class="minrepo-summary"><div class="minrepo-stat">総差枚<strong>'+formatNum(totalDiff)+'</strong></div><div class="minrepo-stat">平均差枚<strong>'+formatNum(avgDiff)+'</strong></div><div class="minrepo-stat">平均G数<strong>'+formatNum(avgGames)+'</strong></div><div class="minrepo-stat">勝率<strong>'+formatWinRate(winRate)+'</strong></div></div>';
- const machines=x.machines||[];
+ const machines=x.machines||x.machine_data||[];
  const machineRows=machines.map(v=>'<tr><td>'+esc(v.machine??v['機種']??'-')+'</td><td>'+formatNum(v.average_diff??v['平均差枚'])+'</td><td>'+formatNum(v.average_games??v['平均G数'])+'</td><td>'+formatWinRate(v.win_rate??v['勝率'])+'</td><td>'+formatNum(v.payout_rate??v['出率'])+'</td></tr>').join('');
  const machineTable=machines.length?'<h3 class="section-title">機種別データ</h3><div style="overflow-x:auto"><table class="minrepo-table"><tr><th>機種</th><th>平均差枚</th><th>平均G数</th><th>勝率</th><th>出率</th></tr>'+machineRows+'</table></div>':'<p class="small">機種別データはありません。</p>';
- const numbers=x.machine_numbers||[];
- const numberRows=numbers.map(v=>'<tr><td>'+esc(v.machine??v['機種']??'-')+'</td><td>'+formatNum(v.machine_number??v['台番号'])+'</td><td>'+formatNum(v.diff??v['差枚'])+'</td><td>'+formatNum(v.games??v['G数'])+'</td><td>'+formatNum(v.payout_rate??v['出率'])+'</td></tr>').join('');
+ const numbers=x.machine_numbers||x.number_data||[];
+ const numberRows=numbers.map(v=>'<tr><td>'+esc(v.machine??v['機種']??'-')+'</td><td>'+formatNum(v.machine_number??v['台番号']??v['台番'])+'</td><td>'+formatNum(v.diff??v['差枚'])+'</td><td>'+formatNum(v.games??v['G数'])+'</td><td>'+formatNum(v.payout_rate??v['出率'])+'</td></tr>').join('');
  const numberTable=numbers.length?'<h3 class="section-title">台番号別データ</h3><div style="overflow-x:auto"><table class="minrepo-table"><tr><th>機種</th><th>台番号</th><th>差枚</th><th>G数</th><th>出率</th></tr>'+numberRows+'</table></div>':'';
- const tails=x.tails||[];
+ const tails=x.tails||x.tail_data||[];
  const tailRows=tails.map(v=>'<tr><td>'+esc(v.tail??v['末尾']??'-')+'</td><td>'+formatNum(v.average_diff??v['平均差枚'])+'</td><td>'+formatNum(v.average_games??v['平均G数'])+'</td><td>'+formatWinRate(v.win_rate??v['勝率'])+'</td><td>'+formatNum(v.payout_rate??v['出率'])+'</td></tr>').join('');
  const tailTable=tails.length?'<h3 class="section-title">末尾別データ</h3><div style="overflow-x:auto"><table class="minrepo-table"><tr><th>末尾</th><th>平均差枚</th><th>平均G数</th><th>勝率</th><th>出率</th></tr>'+tailRows+'</table></div>':'';
- return '<h3>みんレポ</h3>'+summary+machineTable+numberTable+tailTable+(x.source_url?'<p class="small">出典：<a href="'+esc(x.source_url)+'" target="_blank" rel="noopener">みんレポ</a></p>':'');
+ return '<h3>みんレポ</h3>'+summary+machineTable+numberTable+tailTable+((x.source_url||x.url)?'<p class="small">出典：<a href="'+esc(x.source_url||x.url)+'" target="_blank" rel="noopener">みんレポ</a></p>':'');
 }
 async function openCalendarDate(date){
  const d=dates.find(x=>x.date===date);const view=document.getElementById('calendarView');
