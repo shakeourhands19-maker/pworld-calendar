@@ -1,7 +1,7 @@
 [
   {
     "id": "layout_001",
-    "count": 2,
+    "count": 3,
     "representative": "images/2026-09-27/1791026697090.jpg",
     "images": [
       {
@@ -13,6 +13,11 @@
         "date": "2026-10-01",
         "filename": "1791026532253.jpg",
         "url": "images/2026-10-01/1791026532253.jpg"
+      },
+      {
+        "date": "2026-10-20",
+        "filename": "06.jpg",
+        "url": "images/2026-10-20/06.jpg"
       }
     ]
   },
