@@ -38,6 +38,20 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 .island-label{display:block;font-size:14px;font-weight:650;margin:12px 0 6px}
 .island-guide{display:grid;gap:10px;margin:12px 0 18px}.island-guide-step{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.island-step-number{flex:0 0 28px;height:28px;border-radius:50%;background:#263a52;color:#fff;display:grid;place-items:center;font-weight:700}.island-guide-step strong{display:block}.island-guide-step p{margin:4px 0 0;color:#666;font-size:13px}.island-example{border:1px solid #dce3ea;border-radius:10px;padding:12px;background:#f7f9fb}.island-example-label,.island-example-caption{font-size:12px;color:#56616d}.island-example-row{display:flex;gap:5px;overflow:hidden;margin:9px 0}.island-example-row span{flex:1;min-width:0;border:1px solid #9eafc0;background:#fff;border-radius:6px;padding:9px 2px;text-align:center;font-weight:700;font-size:12px}.island-editor-preview{margin-top:12px;padding:10px;border:1px dashed #c9d2dc;border-radius:10px;min-height:55px}.island-editor-preview .island-row{flex-wrap:wrap;overflow:visible}.island-editor-preview .island-slot{flex:0 0 55px;min-height:54px;background:#f7f9fb}.island-editor-preview .island-slot strong{font-size:13px}.island-editor-preview .slot-machine{display:none}.island-input{width:100%;border:1px solid #ddd;border-radius:8px;padding:10px;font:14px/1.5 ui-monospace,monospace;resize:vertical}.island-actions{display:flex;gap:8px;margin-top:10px}.island-actions button{border:1px solid #ddd;background:#fff;border-radius:8px;padding:9px 12px}.island-date-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.island-date-row input{border:1px solid #ddd;border-radius:8px;padding:8px}.island-row{display:flex;gap:5px;overflow-x:auto;padding:5px 0 9px}.island-row-label{font-size:11px;color:#777;margin-top:8px}.island-slot{flex:0 0 72px;min-height:82px;border:1px solid #ddd;border-radius:8px;background:#f8f8f8;padding:6px 3px;text-align:center;font-size:12px;overflow-wrap:anywhere}.island-slot strong{display:block;font-size:14px;margin:3px 0}.island-slot .slot-machine{font-size:10px;color:#555}.island-slot .slot-diff{font-weight:700;margin-top:3px}.island-slot.positive{background:#e1f3e5;border-color:#a6d7b0}.island-slot.negative{background:#fbe6e6;border-color:#e5b4b4}.island-slot.selected{outline:3px solid #555}
 @media(min-width:600px){.grid{grid-template-columns:repeat(3,1fr)}.day{min-height:64px}.minrepo-summary{grid-template-columns:repeat(4,1fr)}}
+
+.direct-island-help{font-size:13px;color:#666;margin:0 0 12px}
+.direct-island-wrap{overflow-x:auto;padding-bottom:8px}
+.direct-island-map{display:grid;grid-template-columns:repeat(11,minmax(62px,1fr));gap:8px;min-width:760px}
+.direct-island-column{display:flex;flex-direction:column;gap:4px}
+.direct-island-column:nth-child(3),.direct-island-column:nth-child(5),.direct-island-column:nth-child(7),.direct-island-column:nth-child(9),.direct-island-column:nth-child(11){margin-left:0}
+.direct-island-slot{height:48px;border:1px solid #aeb4ba;background:#fff;border-radius:2px;color:#222;font-size:13px;font-weight:650;padding:2px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.direct-island-slot.empty{font-weight:400;color:#999;background:#fafafa}
+.direct-island-slot:active{background:#dff2ff}
+.direct-island-slot.numbered{background:#f0f5fa}
+.direct-island-section{margin:14px 0}
+.direct-island-section h3{font-size:15px;margin:0 0 8px}
+.direct-island-actions{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.direct-island-actions button{border:1px solid #ddd;background:#fff;border-radius:8px;padding:8px 12px}
 </style>
 </head>
 <body>
@@ -61,6 +75,14 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 <div id="layoutView"></div><div id="ocrView"></div>
 </section>
 <section id="island" class="hidden">
+
+<div class="card">
+<h2>島図・台番号入力</h2>
+<p class="direct-island-help">マスをタップして台番号を入力・修正できます。最初の列には画像に印字されている番号を入れてあります。入力内容はこのブラウザーに自動保存されます。</p>
+<div class="direct-island-actions"><button onclick="directIslandReset()">初期配置に戻す</button><button onclick="directIslandExport()">台番号一覧をコピー</button></div>
+<div id="directIslandMaps"></div>
+<p id="directIslandStatus" class="small">マスをタップして台番号を入力してください。</p>
+</div>
 <div class="card">
 <h2>島図を作る：台番号を登録</h2>
 <div class="island-guide">
@@ -101,7 +123,7 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 let dates=[],layouts=[],minrepoDates={},ocrIndex={};let calendarMonth=new Date();calendarMonth.setDate(1);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function localDateKey(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function showTab(tab){['calendar','layouts','island'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==tab));['tabCalendar','tabLayouts','tabIsland'].forEach(x=>document.getElementById(x).classList.remove('active'));document.getElementById('tab'+tab[0].toUpperCase()+tab.slice(1)).classList.add('active');if(tab==='calendar')renderCalendar();if(tab==='island')initIsland()}
+function showTab(tab){['calendar','layouts','island'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==tab));['tabCalendar','tabLayouts','tabIsland'].forEach(x=>document.getElementById(x).classList.remove('active'));document.getElementById('tab'+tab[0].toUpperCase()+tab.slice(1)).classList.add('active');if(tab==='calendar')renderCalendar();if(tab==='island'){renderDirectIsland();initIsland()}}
 function imageHtml(x){return '<div><button class="image-button" onclick="openImageModal(\''+esc(x.url)+'\');event.stopPropagation()"><div class="image-date">'+esc(x.filename)+'</div><img src="'+esc(x.url)+'" alt=""></button></div>'}
 function renderImages(items){return items.length?'<div class="grid">'+items.map(imageHtml).join('')+'</div>':'<p class="small">告知画像はありません。</p>'}
 function findLayoutForImage(date,filename){return layouts.find(l=>(l.images||[]).some(x=>x.date===date&&x.filename===filename))}
@@ -137,6 +159,56 @@ async function openCalendarDate(date){
  try{const r=await fetch('minrepo_data/'+date+'.json?'+Date.now());if(!r.ok)throw new Error('not found');const x=await r.json();document.getElementById('minrepoView').innerHTML=renderMinrepo(x)}
  catch(e){document.getElementById('minrepoView').innerHTML='<h3>みんレポ</h3><p class="small">この日のみんレポデータはありません。</p>'}
 }
+
+const directIslandRows=[
+['1060','1061','1062','1063','1065','1066','1067','1068','1070','1071','1072','1073','1075','1076','1077','1078','1080'],
+['1081','1082','1083','1085','1086','1087','1088','1090','1091','1092','1093','1095','1096','1097','1098','1100','1101']
+];
+const directIslandGroups=[2,2,2,2,2,1];
+function directIslandInitial(){const data={};directIslandRows.forEach((rows,mi)=>rows.forEach((n,ri)=>{data[mi+'-'+ri+'-0']=n}));return data}
+function directIslandData(){try{return JSON.parse(localStorage.getItem('pworldDirectIslandMap')||'null')||directIslandInitial()}catch(e){return directIslandInitial()}}
+function directIslandSave(data){localStorage.setItem('pworldDirectIslandMap',JSON.stringify(data))}
+function renderDirectIsland(){
+ const data=directIslandData(),root=document.getElementById('directIslandMaps');let html='';
+ directIslandRows.forEach((rows,mi)=>{
+   html+='<div class="direct-island-section"><h3>島図 '+(mi+1)+'（台番号 '+rows[0]+'〜'+rows[rows.length-1]+' の並び）</h3><div class="direct-island-wrap"><div class="direct-island-map">';
+   let col=0;
+   directIslandGroups.forEach((width,gi)=>{
+     for(let j=0;j<width;j++,col++){
+       html+='<div class="direct-island-column">';
+       rows.forEach((n,ri)=>{
+         const key=mi+'-'+ri+'-'+col, val=data[key]||'';
+         html+='<button type="button" class="direct-island-slot '+(val?'numbered':'empty')+'" onclick="directIslandEdit('+mi+','+ri+','+col+')" aria-label="島図 '+(mi+1)+' 行 '+(ri+1)+' 列 '+(col+1)+'、'+(val||'未入力')+'">'+(val?esc(val):'＋')+'</button>';
+       });
+       html+='</div>';
+     }
+   });
+   html+='</div></div></div>';
+ });
+ root.innerHTML=html;
+}
+function directIslandEdit(mi,ri,ci){
+ const data=directIslandData(),key=mi+'-'+ri+'-'+ci,current=data[key]||'';
+ const answer=prompt('このマスの台番号を入力してください。\n空欄で保存すると番号を削除します。',current);
+ if(answer===null)return;
+ const value=answer.trim();
+ if(value)data[key]=value;else delete data[key];
+ directIslandSave(data);renderDirectIsland();
+ document.getElementById('directIslandStatus').textContent='保存しました。島図 '+(mi+1)+'・'+(ri+1)+'行目・'+(ci+1)+'列目';
+}
+function directIslandReset(){
+ if(!confirm('入力した台番号を初期配置に戻しますか？'))return;
+ directIslandSave(directIslandInitial());renderDirectIsland();
+ document.getElementById('directIslandStatus').textContent='初期配置に戻しました。';
+}
+function directIslandExport(){
+ const data=directIslandData(),lines=[];
+ directIslandRows.forEach((rows,mi)=>{lines.push('島図 '+(mi+1));rows.forEach((n,ri)=>{const vals=[];for(let ci=0;ci<11;ci++){const v=data[mi+'-'+ri+'-'+ci]||'';if(v)vals.push(v)}lines.push(vals.join(', '))});lines.push('')});
+ const text=lines.join('\n');
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>document.getElementById('directIslandStatus').textContent='台番号一覧をコピーしました。').catch(()=>prompt('台番号一覧をコピーしてください',text))}
+ else prompt('台番号一覧をコピーしてください',text);
+}
+
 let islandInitialized=false,islandSelected=null,islandData=null;
 function islandConfig(){try{const c=JSON.parse(localStorage.getItem('pworldIslandConfig')||'{}');if(c.rows!==undefined)return {rows:c.rows};return {rows:(c.islands||[]).map(x=>(x.slots||[]).join(',')).join('\n')}}catch(e){return {rows:''}}}
 function initIsland(){if(!islandInitialized){const c=islandConfig();document.getElementById('islandRows').value=c.rows;document.getElementById('islandDate').value=localDateKey();document.getElementById('islandRows').addEventListener('input',renderIslandEditorPreview);islandInitialized=true}renderIslandEditorPreview();renderIsland()}
