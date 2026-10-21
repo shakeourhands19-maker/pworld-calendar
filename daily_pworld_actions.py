@@ -56,6 +56,11 @@ EXCLUDE_KEYWORDS = [
     "抽選への参加",
 ]
 
+# この案内は「OPEN」等が同時にOCRされても必ず除外する。
+HARD_EXCLUDE_KEYWORDS = [
+    "抽選入場のご案内",
+]
+
 
 # ============================================================
 # レイアウト判定設定
@@ -799,6 +804,27 @@ for i, image_url in enumerate(
     # 採用・除外キーワード判定
     # ========================================================
 
+    hard_exclude_hits = [
+        keyword
+        for keyword in HARD_EXCLUDE_KEYWORDS
+        if normalize_ocr_text(keyword) in normalized_text
+    ]
+
+    # 「抽選入場のご案内」は採用語が誤認識されても必ず除外。
+    if hard_exclude_hits:
+        excluded_files.add(filename)
+        old_destination = os.path.join(today_dir, filename)
+        if os.path.exists(old_destination):
+            os.remove(old_destination)
+        print()
+        print(
+            f"[{i}/{len(image_urls)}] "
+            f"{filename} → 除外（"
+            f"{', '.join(hard_exclude_hits)}"
+            f"）"
+        )
+        continue
+
     exclude_hits = []
 
     for keyword in EXCLUDE_KEYWORDS:
@@ -978,6 +1004,36 @@ if os.path.exists(
         )
 
         layout_data = {}
+
+
+# ============================================================
+# 今回除外した画像の過去登録を取り消す
+# ============================================================
+
+for layout_id in list(layout_data.keys()):
+    layout_info = layout_data[layout_id]
+    images = layout_info.get("images", [])
+    filtered_images = [
+        image_info
+        for image_info in images
+        if not (
+            isinstance(image_info, dict)
+            and image_info.get("date") == today
+            and image_info.get("filename") in excluded_files
+        )
+    ]
+
+    if len(filtered_images) != len(images):
+        layout_info["images"] = filtered_images
+
+    if not layout_info.get("images"):
+        del layout_data[layout_id]
+        representative_path = os.path.join(
+            LAYOUT_DIR,
+            layout_id + ".jpg"
+        )
+        if os.path.exists(representative_path):
+            os.remove(representative_path)
 
 
 # ============================================================
