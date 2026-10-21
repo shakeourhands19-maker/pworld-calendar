@@ -16,6 +16,7 @@ from PIL import Image, ImageEnhance, ImageFilter
 # ============================================================
 # 設定
 # ============================================================
+# 2026-10-21: basic-layout fallback enabled
 
 PAGE_URL = (
     "https://www.p-world.co.jp/hokkaido/"
