@@ -792,53 +792,42 @@ for i, image_url in enumerate(
 
 
     # ========================================================
-    # 除外判定
+    # 採用・除外キーワード判定
     # ========================================================
 
     exclude_hits = []
 
-
     for keyword in EXCLUDE_KEYWORDS:
-
         if keyword.lower() in normalized_text:
+            exclude_hits.append(keyword)
 
-            exclude_hits.append(
-                keyword
-            )
+    matched_keywords = []
 
+    for keyword in KEYWORDS:
+        if keyword.lower() in normalized_text:
+            matched_keywords.append(keyword)
 
-    # ========================================================
-    # 除外
-    # ========================================================
-
-    if exclude_hits:
-
+    # 「開店」「OPEN」が確認できた場合は、除外語も同時に
+    # OCRされていても採用を優先する。
+    if not matched_keywords and exclude_hits:
         print()
-
         print(
             f"[{i}/{len(image_urls)}] "
             f"{filename} → 除外（"
             f"{', '.join(exclude_hits)}"
             f"）"
         )
-
         continue
 
-
-    # ========================================================
-    # 採用判定
-    # ========================================================
-
-    matched_keywords = []
-
-
-    for keyword in KEYWORDS:
-
-        if keyword.lower() in normalized_text:
-
-            matched_keywords.append(
-                keyword
-            )
+    # OCRで採用語を検出できなかった画像は、後段で
+    # 既存の基本レイアウトとの一致を確認する。
+    if not matched_keywords:
+        print()
+        print(
+            f"[{i}/{len(image_urls)}] "
+            f"{filename} → レイアウト照合待ち"
+        )
+        continue
 
 
     # ========================================================
@@ -1141,6 +1130,60 @@ for filename in matched_files:
                 full_path
             )
         )
+
+
+# ============================================================
+# OCRで拾えなかった画像を既存の基本レイアウトと照合
+# ============================================================
+
+# 今回の実行開始時点から存在していたレイアウトだけを参照し、
+# 照合対象同士が互いを基準に連鎖採用されるのを防ぐ。
+known_layout_groups = list(layout_groups)
+already_matched = set(matched_files)
+
+for filename in sorted(os.listdir(IMAGE_DIR)):
+    if not re.match(r"^\d+\.(jpg|jpeg|png|gif|webp)$", filename, re.IGNORECASE):
+        continue
+    if filename in already_matched:
+        continue
+
+    full_path = os.path.join(IMAGE_DIR, filename)
+    if not os.path.isfile(full_path):
+        continue
+
+    signature = create_layout_signature(full_path)
+    if signature is None:
+        continue
+
+    best_layout = None
+    best_distance = None
+
+    for layout in known_layout_groups:
+        distance = calculate_layout_distance(
+            signature,
+            layout["signature"]
+        )
+        if distance <= LAYOUT_THRESHOLD and (
+            best_distance is None or distance < best_distance
+        ):
+            best_layout = layout
+            best_distance = distance
+
+    if best_layout is None:
+        continue
+
+    destination = os.path.join(today_dir, filename)
+    shutil.copy2(full_path, destination)
+    matched_files.append(filename)
+    already_matched.add(filename)
+
+    print()
+    print(
+        f"レイアウト一致で採用: {filename} → "
+        f"{best_layout['id']} (距離 {best_distance:.1f})"
+    )
+
+    today_images.append((filename, destination))
 
 
 # ============================================================
