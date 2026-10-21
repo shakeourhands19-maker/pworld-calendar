@@ -666,6 +666,8 @@ print(
 # ============================================================
 
 matched_files = []
+downloaded_files = set()
+excluded_files = set()
 
 
 for i, image_url in enumerate(
@@ -723,6 +725,7 @@ for i, image_url in enumerate(
 
         image_response.raise_for_status()
 
+        downloaded_files.add(filename)
 
         with open(
             downloaded_path,
@@ -810,6 +813,7 @@ for i, image_url in enumerate(
     # 「開店」「OPEN」が確認できた場合は、除外語も同時に
     # OCRされていても採用を優先する。
     if not matched_keywords and exclude_hits:
+        excluded_files.add(filename)
         print()
         print(
             f"[{i}/{len(image_urls)}] "
@@ -1141,10 +1145,8 @@ for filename in matched_files:
 known_layout_groups = list(layout_groups)
 already_matched = set(matched_files)
 
-for filename in sorted(os.listdir(IMAGE_DIR)):
-    if not re.match(r"^\d+\.(jpg|jpeg|png|gif|webp)$", filename, re.IGNORECASE):
-        continue
-    if filename in already_matched:
+for filename in sorted(downloaded_files):
+    if filename in already_matched or filename in excluded_files:
         continue
 
     full_path = os.path.join(IMAGE_DIR, filename)
