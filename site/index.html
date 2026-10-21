@@ -194,7 +194,13 @@ function renderDirectIsland(){
 }
 function directIslandEdit(mi,ri,ci){
  const data=directIslandData(),key=mi+'-'+ri+'-'+ci,current=data[key]||'';
- const answer=prompt('このマスの台番号を入力してください。\n空欄で保存すると番号を削除します。',current);
+ if(directIslandMode==='blocked'){
+   if(current==='__NO_MACHINE__')delete data[key];else data[key]='__NO_MACHINE__';
+   directIslandSave(data);renderDirectIsland();
+   document.getElementById('directIslandStatus').textContent=current==='__NO_MACHINE__'?'設置なしを解除しました。':'このマスを設置なし（灰色）にしました。';
+   return;
+ }
+ const answer=prompt('このマスの台番号を入力してください。\\n空欄で保存すると番号を削除します。',current==='__NO_MACHINE__'?'':current);
  if(answer===null)return;
  const value=answer.trim();
  if(value)data[key]=value;else delete data[key];
