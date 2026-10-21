@@ -49,6 +49,8 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 .direct-island-slot.empty{font-weight:400;color:#999;background:#fafafa}
 .direct-island-slot:active{background:#dff2ff}
 .direct-island-slot.numbered{background:#f0f5fa}
+.direct-island-slot.unavailable{background:#b8b8b8!important;border-color:#888;color:#333;font-weight:700}
+.direct-island-actions button.active{background:#263a52;color:#fff;border-color:#263a52}
 .direct-island-section{margin:14px 0}
 .direct-island-section h3{font-size:15px;margin:0 0 8px}
 .direct-island-actions{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
@@ -79,8 +81,8 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 
 <div class="card">
 <h2>島図・台番号入力</h2>
-<p class="direct-island-help">マスをタップして台番号を入力・修正できます。最初の列には画像に印字されている番号を入れてあります。入力内容はこのブラウザーに自動保存されます。</p>
-<div class="direct-island-actions"><button onclick="directIslandReset()">初期配置に戻す</button><button onclick="directIslandExport()">台番号一覧をコピー</button></div>
+<p class="direct-island-help">通常モードではマスをタップして台番号を入力・修正。設置なしモードでは、柱などで台がない場所をタップして灰色にできます。入力内容はこのブラウザーに自動保存されます。</p>
+<div class="direct-island-actions"><button id="directIslandModeEdit" class="active" onclick="directIslandSetMode('edit')">台番号を入力</button><button id="directIslandModeBlocked" onclick="directIslandSetMode('blocked')">設置なし（灰色）</button><button onclick="directIslandReset()">初期配置に戻す</button><button onclick="directIslandExport()">台番号一覧をコピー</button></div>
 <div id="directIslandMaps"></div>
 <p id="directIslandStatus" class="small">マスをタップして台番号を入力してください。</p>
 </div>
@@ -169,6 +171,8 @@ const directIslandGroups=[2,2,2,2,2,1];
 function directIslandInitial(){const data={};directIslandRows.forEach((rows,mi)=>rows.forEach((n,ri)=>{data[mi+'-'+ri+'-0']=n}));return data}
 function directIslandData(){try{return JSON.parse(localStorage.getItem('pworldDirectIslandMap')||'null')||directIslandInitial()}catch(e){return directIslandInitial()}}
 function directIslandSave(data){localStorage.setItem('pworldDirectIslandMap',JSON.stringify(data))}
+let directIslandMode='edit';
+function directIslandSetMode(mode){directIslandMode=mode;document.getElementById('directIslandModeEdit').classList.toggle('active',mode==='edit');document.getElementById('directIslandModeBlocked').classList.toggle('active',mode==='blocked');document.getElementById('directIslandStatus').textContent=mode==='blocked'?'設置なしモード：台がないマスをタップすると灰色になります。':'台番号入力モード：マスをタップして番号を入力・修正できます。';}
 function renderDirectIsland(){
  const data=directIslandData(),root=document.getElementById('directIslandMaps');let html='';
  directIslandRows.forEach((rows,mi)=>{
@@ -178,8 +182,8 @@ function renderDirectIsland(){
      for(let j=0;j<width;j++,col++){
        html+='<div class="direct-island-column">';
        rows.forEach((n,ri)=>{
-         const key=mi+'-'+ri+'-'+col, val=data[key]||'';
-         html+='<button type="button" class="direct-island-slot '+(val?'numbered':'empty')+'" onclick="directIslandEdit('+mi+','+ri+','+col+')" aria-label="島図 '+(mi+1)+' 行 '+(ri+1)+' 列 '+(col+1)+'、'+(val||'未入力')+'">'+(val?esc(val):'＋')+'</button>';
+         const key=mi+'-'+ri+'-'+col, val=data[key]||'', blocked=val==='__NO_MACHINE__';
+         html+='<button type="button" class="direct-island-slot '+(blocked?'unavailable':val?'numbered':'empty')+'" onclick="directIslandEdit('+mi+','+ri+','+col+')" aria-label="島図 '+(mi+1)+' 行 '+(ri+1)+' 列 '+(col+1)+'、'+(blocked?'設置なし':val||'未入力')+'">'+(blocked?'設置なし':val?esc(val):'＋')+'</button>';
        });
        html+='</div>';
      }
@@ -204,7 +208,7 @@ function directIslandReset(){
 }
 function directIslandExport(){
  const data=directIslandData(),lines=[];
- directIslandRows.forEach((rows,mi)=>{lines.push('島図 '+(mi+1));rows.forEach((n,ri)=>{const vals=[];for(let ci=0;ci<11;ci++){const v=data[mi+'-'+ri+'-'+ci]||'';if(v)vals.push(v)}lines.push(vals.join(', '))});lines.push('')});
+ directIslandRows.forEach((rows,mi)=>{lines.push('島図 '+(mi+1));rows.forEach((n,ri)=>{const vals=[];for(let ci=0;ci<11;ci++){const v=data[mi+'-'+ri+'-'+ci]||'';if(v==='__NO_MACHINE__')vals.push('[設置なし]');else if(v)vals.push(v)}lines.push(vals.join(', '))});lines.push('')});
  const text=lines.join('\n');
  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>document.getElementById('directIslandStatus').textContent='台番号一覧をコピーしました。').catch(()=>prompt('台番号一覧をコピーしてください',text))}
  else prompt('台番号一覧をコピーしてください',text);
