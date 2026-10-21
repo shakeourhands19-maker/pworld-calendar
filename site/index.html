@@ -175,8 +175,8 @@ function directIslandData(){try{return JSON.parse(localStorage.getItem('pworldDi
 function directIslandSave(data){localStorage.setItem('pworldDirectIslandMap',JSON.stringify(data))}
 let directIslandMode='edit';
 function directIslandSetMode(mode){directIslandMode=mode;document.getElementById('directIslandModeEdit').classList.toggle('active',mode==='edit');document.getElementById('directIslandModeBlocked').classList.toggle('active',mode==='blocked');document.getElementById('directIslandStatus').textContent=mode==='blocked'?'設置なしモード：台がないマスをタップすると灰色になります。':'台番号入力モード：マスをタップして番号を入力・修正できます。';}
-function directIslandNextNumber(n){do{n++}while(/[49]/.test(String(n)));return n}
-function directIslandPrevNumber(n){do{n--}while(n>0&&/[49]/.test(String(n)));return n}
+function directIslandNextNumber(n){do{n++}while(/[49]$/.test(String(n)));return n}
+function directIslandPrevNumber(n){do{n--}while(n>0&&/[49]$/.test(String(n)));return n}
 function directIslandFillGaps(data){
  let changed=false;
  directIslandRows.forEach((rows,mi)=>{
@@ -189,7 +189,7 @@ function directIslandFillGaps(data){
        if(v!=='__NO_MACHINE__')positions.push(ri);
      }
      const anchors=positions.map(ri=>({ri,n:data[mi+'-'+ri+'-'+ci]||''})).filter(x=>x.n);
-     if(anchors.length<2||anchors.some(x=>!/^[0-9]+$/.test(x.n)||/[49]/.test(x.n)))continue;
+     if(anchors.length<2||anchors.some(x=>!/^[0-9]+$/.test(x.n)||/[49]$/.test(x.n)))continue;
      const build=(first,step)=>{
        const expected={}, idx=positions.indexOf(first.ri);
        if(idx<0)return null;
