@@ -1,6 +1,9 @@
 name: 毎日P-WORLD自動収集
 
 on:
+  push:
+    paths:
+      - "daily_pworld_actions.py"
   schedule:
     # 日本時間 06:00
     - cron: "0 21 * * *"
