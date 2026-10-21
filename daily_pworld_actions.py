@@ -1142,6 +1142,56 @@ for layout_id, layout_info in layout_data.items():
 
 
 # ============================================================
+# 既存レイアウト同士の重複を統合
+#
+# 過去に別IDで登録された同一レイアウトも、毎回の収集時に
+# 代表画像を比較して統合する。先に登録されたIDを残す。
+# ============================================================
+
+deduplicated_layouts = []
+
+for layout in layout_groups:
+    duplicate_of = None
+    duplicate_distance = None
+
+    for existing_layout in deduplicated_layouts:
+        distance = calculate_layout_distance(
+            layout["signature"],
+            existing_layout["signature"]
+        )
+
+        if distance <= LAYOUT_THRESHOLD and (
+            duplicate_distance is None or distance < duplicate_distance
+        ):
+            duplicate_of = existing_layout
+            duplicate_distance = distance
+
+    if duplicate_of is None:
+        deduplicated_layouts.append(layout)
+        continue
+
+    # 同じ画像の二重登録を避けながら、使用履歴を統合する。
+    for image_info in layout["images"]:
+        if image_info not in duplicate_of["images"]:
+            duplicate_of["images"].append(image_info)
+
+    duplicate_path = os.path.join(
+        LAYOUT_DIR,
+        layout["id"] + ".jpg"
+    )
+    if os.path.exists(duplicate_path):
+        os.remove(duplicate_path)
+
+    print(
+        f"重複レイアウト統合: {layout['id']} → "
+        f"{duplicate_of['id']} "
+        f"(距離 {duplicate_distance:.1f})"
+    )
+
+layout_groups = deduplicated_layouts
+
+
+# ============================================================
 # layout番号の最大値を取得
 # ============================================================
 
