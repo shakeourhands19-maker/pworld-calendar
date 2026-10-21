@@ -175,13 +175,56 @@ function directIslandData(){try{return JSON.parse(localStorage.getItem('pworldDi
 function directIslandSave(data){localStorage.setItem('pworldDirectIslandMap',JSON.stringify(data))}
 let directIslandMode='edit';
 function directIslandSetMode(mode){directIslandMode=mode;document.getElementById('directIslandModeEdit').classList.toggle('active',mode==='edit');document.getElementById('directIslandModeBlocked').classList.toggle('active',mode==='blocked');document.getElementById('directIslandStatus').textContent=mode==='blocked'?'設置なしモード：台がないマスをタップすると灰色になります。':'台番号入力モード：マスをタップして番号を入力・修正できます。';}
+function directIslandNextNumber(n){do{n++}while(/[49]/.test(String(n)));return n}
+function directIslandPrevNumber(n){do{n--}while(n>0&&/[49]/.test(String(n)));return n}
+function directIslandFillGaps(data){
+ let changed=false;
+ directIslandRows.forEach((rows,mi)=>{
+   const colCount=mi===1?9:11;
+   for(let ci=0;ci<colCount;ci++){
+     const rowCount=(mi===0&&ci>=9)?18:rows.length;
+     const positions=[];
+     for(let ri=0;ri<rowCount;ri++){
+       const v=data[mi+'-'+ri+'-'+ci]||'';
+       if(v!=='__NO_MACHINE__')positions.push(ri);
+     }
+     const values=positions.map(ri=>data[mi+'-'+ri+'-'+ci]||'');
+     if(values.some(v=>v&&!/^\\d+$/.test(v)))continue;
+     const anchors=positions.map((ri,i)=>({ri,n:values[i]})).filter(x=>x.n);
+     if(anchors.length<2)continue;
+     if(anchors.some(x=>/[49]/.test(x.n)))continue;
+     const firstAnchor=anchors[0],firstPos=positions.indexOf(firstAnchor.ri);
+     let start=Number(firstAnchor.n);
+     for(let p=firstPos-1;p>=0;p--)start=directIslandPrevNumber(start);
+     if(start<1||/[49]/.test(String(start)))continue;
+     const expected={};let n=start;
+     positions.forEach((ri,i)=>{if(i>0)n=directIslandNextNumber(n);expected[ri]=String(n)});
+     if(anchors.some(x=>expected[x.ri]!==x.n))continue;
+     positions.forEach(ri=>{
+       const key=mi+'-'+ri+'-'+ci;
+       if(!data[key]){data[key]=expected[ri];changed=true}
+     });
+   }
+   if(mi===1){
+     for(let ri=0;ri<rows.length;ri++){
+       for(let ci=9;ci<11;ci++){
+         const key=mi+'-'+ri+'-'+ci;
+         if(Object.prototype.hasOwnProperty.call(data,key)){delete data[key];changed=true}
+       }
+     }
+   }
+ });
+ if(changed)directIslandSave(data);
+ return data;
+}
 function renderDirectIsland(){
- const data=directIslandData(),root=document.getElementById('directIslandMaps');let html='';
+ const data=directIslandFillGaps(directIslandData()),root=document.getElementById('directIslandMaps');let html='';
  directIslandRows.forEach((rows,mi)=>{
    html+='<div class="direct-island-section"><h3>島図 '+(mi+1)+'（台番号 '+rows[0]+'〜'+rows[rows.length-1]+' の並び）</h3><div class="direct-island-wrap"><div class="direct-island-map">';
    let col=0;
    directIslandGroups.forEach((width,gi)=>{
      for(let j=0;j<width;j++,col++){
+       if(mi===1&&col>=9)continue;
        const compactRight=(mi===0&&col>=9);
        html+='<div class="direct-island-column'+(compactRight?' compact-right':'')+'">';
        const rowCount=compactRight?18:rows.length;
@@ -218,7 +261,7 @@ function directIslandReset(){
 }
 function directIslandExport(){
  const data=directIslandData(),lines=[];
- directIslandRows.forEach((rows,mi)=>{lines.push('島図 '+(mi+1));rows.forEach((n,ri)=>{const vals=[];for(let ci=0;ci<11;ci++){const v=data[mi+'-'+ri+'-'+ci]||'';if(v==='__NO_MACHINE__')vals.push('[設置なし]');else if(v)vals.push(v)}lines.push(vals.join(', '))});lines.push('')});
+ directIslandRows.forEach((rows,mi)=>{lines.push('島図 '+(mi+1));const rowCount=mi===0?18:rows.length;for(let ri=0;ri<rowCount;ri++){const vals=[];for(let ci=0;ci<(mi===1?9:11);ci++){const v=data[mi+'-'+ri+'-'+ci]||'';if(v==='__NO_MACHINE__')vals.push('[設置なし]');else if(v)vals.push(v)}lines.push(vals.join(', '))}lines.push('')});
  const text=lines.join('\n');
  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>document.getElementById('directIslandStatus').textContent='台番号一覧をコピーしました。').catch(()=>prompt('台番号一覧をコピーしてください',text))}
  else prompt('台番号一覧をコピーしてください',text);
