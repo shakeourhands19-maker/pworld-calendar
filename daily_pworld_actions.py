@@ -1082,18 +1082,22 @@ for layout_id, layout_info in layout_data.items():
 
             if date and filename:
 
+                # 日付フォルダ形式を優先し、過去データの旧形式
+                # data/<filename> にもフォールバックする。
                 candidate = os.path.join(
                     DATA_DIR,
                     date,
                     filename
                 )
 
-                if os.path.exists(
-                    candidate
-                ):
+                if not os.path.exists(candidate):
+                    candidate = os.path.join(
+                        DATA_DIR,
+                        filename
+                    )
 
+                if os.path.exists(candidate):
                     representative_path = candidate
-
                     break
 
 
@@ -1262,29 +1266,21 @@ for filename, full_path in today_images:
 
 
     matched_layout = None
-
     matched_distance = None
 
-
-    # ========================================================
-    # 既存レイアウトを検索
-    # ========================================================
-
+    # すべての既存レイアウトを比較し、閾値内で最も近いものを選ぶ。
+    # 最初に見つかった候補で止めると、順番次第で誤分類するため。
     for layout in layout_groups:
-
         distance = calculate_layout_distance(
             signature,
             layout["signature"]
         )
 
-
-        if distance <= LAYOUT_THRESHOLD:
-
+        if distance <= LAYOUT_THRESHOLD and (
+            matched_distance is None or distance < matched_distance
+        ):
             matched_layout = layout
-
             matched_distance = distance
-
-            break
 
 
     # ========================================================
@@ -1442,10 +1438,14 @@ for layout in layout_groups:
             filename
         )
 
+        # 旧データは data/<filename> 直下に保存されている場合がある。
+        if not os.path.exists(source_path):
+            source_path = os.path.join(
+                DATA_DIR,
+                filename
+            )
 
-        if os.path.exists(
-            source_path
-        ):
+        if os.path.exists(source_path):
 
             try:
 
