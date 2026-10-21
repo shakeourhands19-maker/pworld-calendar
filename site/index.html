@@ -185,33 +185,28 @@ function directIslandFillGaps(data){
      const rowCount=(mi===0&&ci>=9)?18:rows.length;
      const positions=[];
      for(let ri=0;ri<rowCount;ri++){
-       const v=data[mi+'-'+ri+'-'+ci]||'';
+       const key=mi+'-'+ri+'-'+ci, v=data[key]||'';
        if(v!=='__NO_MACHINE__')positions.push(ri);
      }
-     const values=positions.map(ri=>data[mi+'-'+ri+'-'+ci]||'');
-     if(values.some(v=>v&&!/^\\d+$/.test(v)))continue;
-     const anchors=positions.map((ri,i)=>({ri,n:values[i]})).filter(x=>x.n);
-     if(anchors.length<2)continue;
-     if(anchors.some(x=>/[49]/.test(x.n)))continue;
-     const firstAnchor=anchors[0],firstPos=positions.indexOf(firstAnchor.ri);
-     let start=Number(firstAnchor.n);
-     for(let p=firstPos-1;p>=0;p--)start=directIslandPrevNumber(start);
-     if(start<1||/[49]/.test(String(start)))continue;
-     const expected={};let n=start;
-     positions.forEach((ri,i)=>{if(i>0)n=directIslandNextNumber(n);expected[ri]=String(n)});
-     if(anchors.some(x=>expected[x.ri]!==x.n))continue;
-     positions.forEach(ri=>{
-       const key=mi+'-'+ri+'-'+ci;
-       if(!data[key]){data[key]=expected[ri];changed=true}
-     });
+     const anchors=positions.map(ri=>({ri,n:data[mi+'-'+ri+'-'+ci]||''})).filter(x=>x.n);
+     if(anchors.length<2||anchors.some(x=>!/^[0-9]+$/.test(x.n)||/[49]/.test(x.n)))continue;
+     const build=(first,step)=>{
+       const expected={}, idx=positions.indexOf(first.ri);
+       if(idx<0)return null;
+       expected[first.ri]=String(first.n);
+       let n=Number(first.n);
+       for(let i=idx+1;i<positions.length;i++){n=step>0?directIslandNextNumber(n):directIslandPrevNumber(n);if(n<1)return null;expected[positions[i]]=String(n)}
+       n=Number(first.n);
+       for(let i=idx-1;i>=0;i--){n=step>0?directIslandPrevNumber(n):directIslandNextNumber(n);if(n<1)return null;expected[positions[i]]=String(n)}
+       return expected;
+     };
+     const first=anchors[0], candidates=[build(first,1),build(first,-1)].filter(Boolean);
+     const expected=candidates.find(seq=>anchors.every(a=>seq[a.ri]===a.n));
+     if(!expected)continue;
+     positions.forEach(ri=>{const key=mi+'-'+ri+'-'+ci;if(!data[key]){data[key]=expected[ri];changed=true}});
    }
-   if(mi===1){
-     for(let ri=0;ri<rows.length;ri++){
-       for(let ci=9;ci<11;ci++){
-         const key=mi+'-'+ri+'-'+ci;
-         if(Object.prototype.hasOwnProperty.call(data,key)){delete data[key];changed=true}
-       }
-     }
+   if(mi===1)for(let ri=0;ri<rows.length;ri++)for(let ci=9;ci<11;ci++){
+     const key=mi+'-'+ri+'-'+ci;if(Object.prototype.hasOwnProperty.call(data,key)){delete data[key];changed=true}
    }
  });
  if(changed)directIslandSave(data);
