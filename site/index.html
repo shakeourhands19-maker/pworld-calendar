@@ -43,6 +43,8 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 .direct-island-wrap{overflow-x:auto;padding-bottom:8px}
 .direct-island-map{display:grid;grid-template-columns:repeat(11,minmax(62px,1fr));gap:8px;min-width:760px}
 .direct-island-column{display:flex;flex-direction:column;gap:4px}
+.direct-island-column.compact-right{gap:2px}
+.direct-island-column.compact-right .direct-island-slot{height:47px;min-height:47px;flex:0 0 47px}
 .direct-island-column:nth-child(3),.direct-island-column:nth-child(5),.direct-island-column:nth-child(7),.direct-island-column:nth-child(9),.direct-island-column:nth-child(11){margin-left:12px}
 #island>.card:nth-child(2){display:none}
 .direct-island-slot{height:48px;border:1px solid #aeb4ba;background:#fff;border-radius:2px;color:#222;font-size:13px;font-weight:650;padding:2px;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -180,11 +182,13 @@ function renderDirectIsland(){
    let col=0;
    directIslandGroups.forEach((width,gi)=>{
      for(let j=0;j<width;j++,col++){
-       html+='<div class="direct-island-column">';
-       rows.forEach((n,ri)=>{
+       const compactRight=(mi===0&&col>=9);
+       html+='<div class="direct-island-column'+(compactRight?' compact-right':'')+'">';
+       const rowCount=compactRight?18:rows.length;
+       for(let ri=0;ri<rowCount;ri++){
          const key=mi+'-'+ri+'-'+col, val=data[key]||'', blocked=val==='__NO_MACHINE__';
          html+='<button type="button" class="direct-island-slot '+(blocked?'unavailable':val?'numbered':'empty')+'" onclick="directIslandEdit('+mi+','+ri+','+col+')" aria-label="島図 '+(mi+1)+' 行 '+(ri+1)+' 列 '+(col+1)+'、'+(blocked?'設置なし':val||'未入力')+'">'+(blocked?'設置なし':val?esc(val):'＋')+'</button>';
-       });
+       }
        html+='</div>';
      }
    });
