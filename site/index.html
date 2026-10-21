@@ -50,6 +50,7 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 .direct-island-slot{height:48px;border:1px solid #aeb4ba;background:#fff;border-radius:2px;color:#222;font-size:13px;font-weight:650;padding:2px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .direct-island-slot.empty{font-weight:400;color:#999;background:#fafafa}
 .direct-island-slot:active{background:#dff2ff}
+.direct-slot-content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:100%;min-width:0;line-height:1.05}.direct-slot-number{font-size:13px;font-weight:700}.direct-slot-machine{font-size:9px;font-weight:500;line-height:1.1;max-height:20px;overflow:hidden;overflow-wrap:anywhere;color:#364b60}
 .direct-island-slot.numbered{background:#f0f5fa}
 .direct-island-slot.unavailable{background:#b8b8b8!important;border-color:#888;color:#333;font-weight:700}
 .direct-island-actions button.active{background:#263a52;color:#fff;border-color:#263a52}
@@ -83,7 +84,7 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 
 <div class="card">
 <h2>島図・台番号入力</h2>
-<p class="direct-island-help">通常モードではマスをタップして台番号を入力・修正。設置なしモードでは、柱などで台がない場所をタップして灰色にできます。入力内容はこのブラウザーに自動保存されます。</p>
+<p class="direct-island-help">通常モードではマスをタップして台番号を入力・修正。設置なしモードでは、柱などで台がない場所をタップして灰色にできます。台番号はこのブラウザーに自動保存されます。選択日のみんレポに台番号と機種名の対応が掲載されていれば、マス内に機種名も表示します。</p>
 <div class="direct-island-actions"><button id="directIslandModeEdit" class="active" onclick="directIslandSetMode('edit')">台番号を入力</button><button id="directIslandModeBlocked" onclick="directIslandSetMode('blocked')">設置なし（灰色）</button><button onclick="directIslandReset()">初期配置に戻す</button><button onclick="directIslandExport()">台番号一覧をコピー</button></div>
 <div id="directIslandMaps"></div>
 <p id="directIslandStatus" class="small">マスをタップして台番号を入力してください。</p>
@@ -117,7 +118,7 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 <p class="small">※現状、みんレポの台番号別データは日によって掲載範囲が異なるため、全台の機種名が必ず表示されるわけではありません。</p>
 </div>
 <div class="card">
-<div class="island-date-row"><label for="islandDate">データ日付</label><input id="islandDate" type="date" onchange="renderIsland()"></div>
+<div class="island-date-row"><label for="islandDate">データ日付</label><input id="islandDate" type="date" onchange="renderIsland();renderDirectIsland()"></div>
 <div id="islandMap"><p class="small">台番号を入力して「配置を保存」を押してください。</p></div>
 <div id="islandDetail"></div>
 </div>
@@ -174,6 +175,17 @@ function directIslandInitial(){const data={};directIslandRows.forEach((rows,mi)=
 function directIslandData(){try{return JSON.parse(localStorage.getItem('pworldDirectIslandMap')||'null')||directIslandInitial()}catch(e){return directIslandInitial()}}
 function directIslandSave(data){localStorage.setItem('pworldDirectIslandMap',JSON.stringify(data))}
 let directIslandMode='edit';
+let directIslandMachineByNumber={},directIslandMachineDate='';
+async function directIslandLoadMachineNames(){
+ const date=document.getElementById('islandDate')?.value||localDateKey();
+ if(date===directIslandMachineDate)return;
+ directIslandMachineDate=date;directIslandMachineByNumber={};
+ try{
+  const r=await fetch('minrepo_data/'+date+'.json?'+Date.now());
+  if(r.ok){const data=await r.json();(data.number_data||data.machine_numbers||[]).forEach(x=>{const n=String(x['台番']??x['台番号']??x.machine_number??'');const name=x['機種']??x.machine??'';if(n&&name)directIslandMachineByNumber[n]=name;});}
+ }catch(e){}
+ if(date===(document.getElementById('islandDate')?.value||localDateKey()))renderDirectIsland();
+}
 function directIslandSetMode(mode){directIslandMode=mode;document.getElementById('directIslandModeEdit').classList.toggle('active',mode==='edit');document.getElementById('directIslandModeBlocked').classList.toggle('active',mode==='blocked');document.getElementById('directIslandStatus').textContent=mode==='blocked'?'設置なしモード：台がないマスをタップすると灰色になります。':'台番号入力モード：マスをタップして番号を入力・修正できます。';}
 function directIslandNextNumber(n){do{n++}while(/[49]/.test(String(n)));return n}
 function directIslandPrevNumber(n){do{n--}while(n>0&&/[49]/.test(String(n)));return n}
@@ -225,7 +237,8 @@ function renderDirectIsland(){
        const rowCount=compactRight?18:rows.length;
        for(let ri=0;ri<rowCount;ri++){
          const key=mi+'-'+ri+'-'+col, val=data[key]||'', blocked=val==='__NO_MACHINE__';
-         html+='<button type="button" class="direct-island-slot '+(blocked?'unavailable':val?'numbered':'empty')+'" onclick="directIslandEdit('+mi+','+ri+','+col+')" aria-label="島図 '+(mi+1)+' 行 '+(ri+1)+' 列 '+(col+1)+'、'+(blocked?'設置なし':val||'未入力')+'">'+(blocked?'設置なし':val?esc(val):'＋')+'</button>';
+         const machineName=val&&val!=='__NO_MACHINE__'?(directIslandMachineByNumber[String(val)]||''):'';
+         html+='<button type="button" class="direct-island-slot '+(blocked?'unavailable':val?'numbered':'empty')+'" onclick="directIslandEdit('+mi+','+ri+','+col+')" aria-label="島図 '+(mi+1)+' 行 '+(ri+1)+' 列 '+(col+1)+'、'+(blocked?'設置なし':val||'未入力')+(machineName?'、'+esc(machineName):'')+'">'+(blocked?'設置なし':val?'<span class="direct-slot-content"><span class="direct-slot-number">'+esc(val)+'</span>'+(machineName?'<span class="direct-slot-machine">'+esc(machineName)+'</span>':'')+'</span>':'＋')+'</button>';
        }
        html+='</div>';
      }
@@ -233,6 +246,7 @@ function renderDirectIsland(){
    html+='</div></div></div>';
  });
  root.innerHTML=html;
+ directIslandLoadMachineNames();
 }
 function directIslandEdit(mi,ri,ci){
  const data=directIslandData(),key=mi+'-'+ri+'-'+ci,current=data[key]||'';
@@ -264,7 +278,7 @@ function directIslandExport(){
 
 let islandInitialized=false,islandSelected=null,islandData=null;
 function islandConfig(){try{const c=JSON.parse(localStorage.getItem('pworldIslandConfig')||'{}');if(c.rows!==undefined)return {rows:c.rows};return {rows:(c.islands||[]).map(x=>(x.slots||[]).join(',')).join('\n')}}catch(e){return {rows:''}}}
-function initIsland(){if(!islandInitialized){const c=islandConfig();document.getElementById('islandRows').value=c.rows;document.getElementById('islandDate').value=localDateKey();document.getElementById('islandRows').addEventListener('input',renderIslandEditorPreview);islandInitialized=true}renderIslandEditorPreview();renderIsland()}
+function initIsland(){if(!islandInitialized){const c=islandConfig();document.getElementById('islandRows').value=c.rows;document.getElementById('islandDate').value=localDateKey();document.getElementById('islandRows').addEventListener('input',renderIslandEditorPreview);islandInitialized=true}renderIslandEditorPreview();renderIsland();renderDirectIsland()}
 function addGeneratedIsland(){const start=Number(document.getElementById('islandStart').value),count=Number(document.getElementById('islandCount').value);if(!Number.isInteger(start)||start<1||!Number.isInteger(count)||count<1||count>100){alert('開始台番号と台数を正しく入力してください。');return}const line=Array.from({length:count},(_,i)=>start+i).join(',');const box=document.getElementById('islandRows');box.value+=(box.value.trim()?'\n':'')+line;saveIslandConfig();document.getElementById('islandStart').value=String(start+count);}
 function addBlankIsland(){const box=document.getElementById('islandRows');box.value+=(box.value.trim()?'\n':'')+' ';box.value=box.value.replace(/ +$/,'');box.focus();renderIslandEditorPreview()}
 function saveIslandConfig(){const rows=document.getElementById('islandRows').value;localStorage.setItem('pworldIslandConfig',JSON.stringify({rows}));document.getElementById('islandSaveStatus').textContent='台番号の配置をこのブラウザーに保存しました。';renderIslandEditorPreview();renderIsland()}
