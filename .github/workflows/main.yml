@@ -43,12 +43,16 @@ jobs:
         run: |
           python minrepo.py
 
+      - name: Run Horulog machine mapping collector
+        run: |
+          python collect_horulog.py
+
       - name: Save collected data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add data minrepo_data excluded_urls.json
+          git add data minrepo_data site/horulog_data excluded_urls.json
 
           git diff --cached --quiet || git commit -m "Update daily P-WORLD and Minrepo data"
 
