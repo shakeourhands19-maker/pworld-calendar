@@ -125,7 +125,7 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 <p class="small">※現状、みんレポの台番号別データは日によって掲載範囲が異なるため、全台の機種名が必ず表示されるわけではありません。</p>
 </div>
 <div class="card">
-<div class="island-date-row"><label for="islandDate">データ日付</label><input id="islandDate" type="date" onchange="renderIsland();renderDirectIsland()"></div>
+<div class="island-date-row"><label for="islandDate">島図の日付</label><input id="islandDate" type="date" onchange="directIslandChangeDate();renderIsland()"></div><p class="small">日付ごとに台番号配置・設置なし・手入力した機種名を保存します。新しい日付は直近の保存済み島図を引き継ぐので、変更があった部分だけ修正してください。</p>
 <div id="islandMap"><p class="small">台番号を入力して「配置を保存」を押してください。</p></div>
 <div id="islandDetail"></div>
 </div>
@@ -179,12 +179,30 @@ const directIslandRows=[
 ];
 const directIslandGroups=[2,2,2,2,2,1];
 function directIslandInitial(){const data={};directIslandRows.forEach((rows,mi)=>rows.forEach((n,ri)=>{data[mi+'-'+ri+'-0']=n}));return data}
-function directIslandData(){try{return JSON.parse(localStorage.getItem('pworldDirectIslandMap')||'null')||directIslandInitial()}catch(e){return directIslandInitial()}}
-function directIslandSave(data){localStorage.setItem('pworldDirectIslandMap',JSON.stringify(data))}
+function directIslandCurrentDate(){return document.getElementById('islandDate')?.value||localDateKey()}
+function directIslandProfiles(){try{return JSON.parse(localStorage.getItem('pworldDirectIslandProfiles')||'{}')}catch(e){return {}}}
+function directIslandEnsureProfile(date=directIslandCurrentDate()){
+ const profiles=directIslandProfiles();
+ if(!profiles[date]){
+  const keys=Object.keys(profiles).sort(),prior=keys.filter(k=>k<=date).pop(),source=prior||keys[keys.length-1];
+  if(source)profiles[date]=JSON.parse(JSON.stringify(profiles[source]));
+  else {
+   let oldMap=null,oldNames={};
+   try{oldMap=JSON.parse(localStorage.getItem('pworldDirectIslandMap')||'null')}catch(e){}
+   try{oldNames=JSON.parse(localStorage.getItem('pworldDirectMachineNames')||'{}')}catch(e){}
+   profiles[date]={map:oldMap||directIslandInitial(),names:oldNames};
+  }
+  localStorage.setItem('pworldDirectIslandProfiles',JSON.stringify(profiles));
+ }
+ return profiles[date];
+}
+function directIslandData(){const p=directIslandEnsureProfile();return p.map||directIslandInitial()}
+function directIslandSave(data){const date=directIslandCurrentDate(),profiles=directIslandProfiles(),p=directIslandEnsureProfile(date);p.map=data;profiles[date]=p;localStorage.setItem('pworldDirectIslandProfiles',JSON.stringify(profiles));localStorage.setItem('pworldDirectIslandMap',JSON.stringify(data))}
+function directIslandChangeDate(){const date=directIslandCurrentDate();directIslandEnsureProfile(date);directIslandMachineDate='';directIslandMachineByNumber={};renderDirectIsland();document.getElementById('directIslandStatus').textContent=date+'の島図を表示しています。変更はこの日付にだけ保存されます。'}
 let directIslandMode='edit';
 let directIslandMachineByNumber={},directIslandMachineDate='';
-function directIslandManualMachineNames(){try{return JSON.parse(localStorage.getItem('pworldDirectMachineNames')||'{}')}catch(e){return {}}}
-function directIslandSaveManualMachineNames(data){localStorage.setItem('pworldDirectMachineNames',JSON.stringify(data))}
+function directIslandManualMachineNames(){const p=directIslandEnsureProfile();return p.names||{}}
+function directIslandSaveManualMachineNames(data){const date=directIslandCurrentDate(),profiles=directIslandProfiles(),p=directIslandEnsureProfile(date);p.names=data;profiles[date]=p;localStorage.setItem('pworldDirectIslandProfiles',JSON.stringify(profiles));localStorage.setItem('pworldDirectMachineNames',JSON.stringify(data))}
 function directIslandImportBulkNames(){
  const input=document.getElementById('directIslandBulkNames').value;
  const names=directIslandManualMachineNames();
@@ -209,10 +227,10 @@ function directIslandImportBulkNames(){
  document.getElementById('directIslandBulkStatus').textContent=added+'台分の機種名を登録しました。'+(skipped?' 読み取れなかった行：'+skipped+'行（形式を確認してください）。':'');
 }
 async function directIslandLoadMachineNames(){
- const date='2026-10-14以降';
+ const date=directIslandCurrentDate();
  if(date===directIslandMachineDate)return;
  directIslandMachineDate=date;directIslandMachineByNumber={};
- const end=localDateKey();
+ const end=date;
  const start=new Date('2026-10-14T12:00:00');
  const dates=[];
  for(const d=new Date(start);d.toISOString().slice(0,10)<=end;d.setDate(d.getDate()+1))dates.push(d.toISOString().slice(0,10));
@@ -330,7 +348,7 @@ function directIslandExport(){
 
 let islandInitialized=false,islandSelected=null,islandData=null;
 function islandConfig(){try{const c=JSON.parse(localStorage.getItem('pworldIslandConfig')||'{}');if(c.rows!==undefined)return {rows:c.rows};return {rows:(c.islands||[]).map(x=>(x.slots||[]).join(',')).join('\n')}}catch(e){return {rows:''}}}
-function initIsland(){if(!islandInitialized){const c=islandConfig();document.getElementById('islandRows').value=c.rows;document.getElementById('islandDate').value=Object.keys(minrepoDates).sort().pop()||localDateKey();document.getElementById('islandRows').addEventListener('input',renderIslandEditorPreview);islandInitialized=true}renderIslandEditorPreview();renderIsland();renderDirectIsland()}
+function initIsland(){if(!islandInitialized){const c=islandConfig();document.getElementById('islandRows').value=c.rows;document.getElementById('islandDate').value=Object.keys(minrepoDates).sort().pop()||localDateKey();document.getElementById('islandRows').addEventListener('input',renderIslandEditorPreview);islandInitialized=true;directIslandEnsureProfile()}renderIslandEditorPreview();renderIsland();renderDirectIsland()}
 function addGeneratedIsland(){const start=Number(document.getElementById('islandStart').value),count=Number(document.getElementById('islandCount').value);if(!Number.isInteger(start)||start<1||!Number.isInteger(count)||count<1||count>100){alert('開始台番号と台数を正しく入力してください。');return}const line=Array.from({length:count},(_,i)=>start+i).join(',');const box=document.getElementById('islandRows');box.value+=(box.value.trim()?'\n':'')+line;saveIslandConfig();document.getElementById('islandStart').value=String(start+count);}
 function addBlankIsland(){const box=document.getElementById('islandRows');box.value+=(box.value.trim()?'\n':'')+' ';box.value=box.value.replace(/ +$/,'');box.focus();renderIslandEditorPreview()}
 function saveIslandConfig(){const rows=document.getElementById('islandRows').value;localStorage.setItem('pworldIslandConfig',JSON.stringify({rows}));document.getElementById('islandSaveStatus').textContent='台番号の配置をこのブラウザーに保存しました。';renderIslandEditorPreview();renderIsland()}
