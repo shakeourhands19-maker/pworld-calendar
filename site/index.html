@@ -179,14 +179,24 @@ let directIslandMachineByNumber={},directIslandMachineDate='';
 function directIslandManualMachineNames(){try{return JSON.parse(localStorage.getItem('pworldDirectMachineNames')||'{}')}catch(e){return {}}}
 function directIslandSaveManualMachineNames(data){localStorage.setItem('pworldDirectMachineNames',JSON.stringify(data))}
 async function directIslandLoadMachineNames(){
- const date=document.getElementById('islandDate')?.value||localDateKey();
+ const date='2026-10-14以降';
  if(date===directIslandMachineDate)return;
  directIslandMachineDate=date;directIslandMachineByNumber={};
- try{
-  const r=await fetch('minrepo_data/'+date+'.json?'+Date.now());
-  if(r.ok){const data=await r.json();(data.number_data||data.machine_numbers||[]).forEach(x=>{const n=String(x['台番']??x['台番号']??x.machine_number??'');const name=x['機種']??x.machine??'';if(n&&name)directIslandMachineByNumber[n]=name;});}
- }catch(e){}
- if(date===(document.getElementById('islandDate')?.value||localDateKey()))renderDirectIsland();
+ const end=localDateKey();
+ const start=new Date('2026-10-14T12:00:00');
+ const dates=[];
+ for(const d=new Date(start);d.toISOString().slice(0,10)<=end;d.setDate(d.getDate()+1))dates.push(d.toISOString().slice(0,10));
+ const results=await Promise.all(dates.map(async day=>{
+  try{const r=await fetch('minrepo_data/'+day+'.json?'+Date.now());if(!r.ok)return null;return await r.json();}catch(e){return null;}
+ }));
+ results.filter(Boolean).forEach(data=>{
+  (data.number_data||data.machine_numbers||[]).forEach(x=>{
+   const n=String(x['台番']??x['台番号']??x.machine_number??'');
+   const name=x['機種']??x.machine??'';
+   if(n&&name)directIslandMachineByNumber[n]=name;
+  });
+ });
+ renderDirectIsland();
 }
 function directIslandSetMode(mode){directIslandMode=mode;document.getElementById('directIslandModeEdit').classList.toggle('active',mode==='edit');document.getElementById('directIslandModeMachine').classList.toggle('active',mode==='machine');document.getElementById('directIslandModeBlocked').classList.toggle('active',mode==='blocked');document.getElementById('directIslandStatus').textContent=mode==='blocked'?'設置なしモード：台がないマスをタップすると灰色になります。':mode==='machine'?'機種名入力モード：台をタップして機種名を登録・修正できます。空欄で登録すると手入力の機種名を削除します。':'台番号入力モード：マスをタップして番号を入力・修正できます。';}
 function directIslandNextNumber(n){do{n++}while(/[49]/.test(String(n)));return n}
