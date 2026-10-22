@@ -230,10 +230,21 @@ async function directIslandLoadMachineNames(){
  const date=directIslandCurrentDate();
  if(date===directIslandMachineDate)return;
  directIslandMachineDate=date;directIslandMachineByNumber={};
- const end=date;
- const start=new Date('2026-10-14T12:00:00');
- const dates=[];
- for(const d=new Date(start);d.toISOString().slice(0,10)<=end;d.setDate(d.getDate()+1))dates.push(d.toISOString().slice(0,10));
+ // Prefer the full daily machine-number list from Horulog.
+ try{
+  const r=await fetch('horulog_data/'+date+'.json?'+Date.now());
+  if(r.ok){
+   const data=await r.json();
+   if(data.machines&&Object.keys(data.machines).length>=100){
+    directIslandMachineByNumber=data.machines;
+    renderDirectIsland();
+    return;
+   }
+  }
+ }catch(e){}
+ // Fallback to the partial Min-Revo data, aggregated through the selected date.
+ const start=new Date('2026-10-14T12:00:00'),dates=[];
+ for(const d=new Date(start);d.toISOString().slice(0,10)<=date;d.setDate(d.getDate()+1))dates.push(d.toISOString().slice(0,10));
  const results=await Promise.all(dates.map(async day=>{
   try{const r=await fetch('minrepo_data/'+day+'.json?'+Date.now());if(!r.ok)return null;return await r.json();}catch(e){return null;}
  }));
