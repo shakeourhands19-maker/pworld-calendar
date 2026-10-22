@@ -87,6 +87,13 @@ img{max-width:100%;height:auto;border-radius:8px;display:block}.small{color:#777
 <p class="direct-island-help">台番号入力モードで番号を登録し、機種名入力モードで各台の機種名を登録できます。みんレポに掲載された機種名は自動表示し、手入力した名前は優先して表示します。台番号・手入力機種名はこのブラウザーに保存されます。設置なしモードでは台がない場所を灰色にできます。</p>
 <div class="direct-island-actions"><button id="directIslandModeEdit" class="active" onclick="directIslandSetMode('edit')">台番号を入力</button><button id="directIslandModeMachine" onclick="directIslandSetMode('machine')">機種名を入力</button><button id="directIslandModeBlocked" onclick="directIslandSetMode('blocked')">設置なし（灰色）</button><button onclick="directIslandReset()">初期配置に戻す</button><button onclick="directIslandExport()">台番号一覧をコピー</button></div>
 <div id="directIslandMaps"></div>
+<div class="card" style="margin-top:12px">
+<h3>機種名をまとめて登録</h3>
+<p class="small">サイトセブンの機種別「大当り一覧」などから、台番号と機種名をコピーできる場合は、ここに貼り付けて一括登録できます。1行ごとに「台番号 機種名」または「機種名 台番号 台番号…」の形式にしてください。既存の手入力データは、同じ台番号がある行だけ上書きします。</p>
+<textarea id="directIslandBulkNames" class="island-input" rows="6" placeholder="例：331 スマスロ ハナビ&#10;例：L虚構推理 520 521"></textarea>
+<div class="island-actions"><button onclick="directIslandImportBulkNames()">機種名を一括登録</button></div>
+<p id="directIslandBulkStatus" class="small">登録した機種名はこのブラウザーに保存されます。</p>
+</div>
 <p id="directIslandStatus" class="small">マスをタップして台番号を入力してください。</p>
 </div>
 <div class="card">
@@ -178,6 +185,29 @@ let directIslandMode='edit';
 let directIslandMachineByNumber={},directIslandMachineDate='';
 function directIslandManualMachineNames(){try{return JSON.parse(localStorage.getItem('pworldDirectMachineNames')||'{}')}catch(e){return {}}}
 function directIslandSaveManualMachineNames(data){localStorage.setItem('pworldDirectMachineNames',JSON.stringify(data))}
+function directIslandImportBulkNames(){
+ const input=document.getElementById('directIslandBulkNames').value;
+ const names=directIslandManualMachineNames();
+ let added=0,skipped=0;
+ input.split(/\r?\n/).forEach(line=>{
+  const s=line.trim();if(!s)return;
+  let numberFirst=s.match(/^\s*(\d{3,4})\s*[,，;；\t ]+(.+?)\s*$/);
+  if(numberFirst){
+   const n=numberFirst[1],name=numberFirst[2].trim();
+   if(name){names[n]=name;added++;}else skipped++;
+   return;
+  }
+  const nameFirst=s.match(/^\s*(.+?)\s*[,，;；\t ]+((?:\d{3,4})(?:\s*[,，;；\t ]+\d{3,4})*)\s*$/);
+  if(nameFirst){
+   const name=nameFirst[1].trim(),nums=nameFirst[2].match(/\d{3,4}/g)||[];
+   if(name&&nums.length){nums.forEach(n=>{names[n]=name;added++})}else skipped++;
+   return;
+  }
+  skipped++;
+ });
+ directIslandSaveManualMachineNames(names);renderDirectIsland();
+ document.getElementById('directIslandBulkStatus').textContent=added+'台分の機種名を登録しました。'+(skipped?' 読み取れなかった行：'+skipped+'行（形式を確認してください）。':'');
+}
 async function directIslandLoadMachineNames(){
  const date='2026-10-14以降';
  if(date===directIslandMachineDate)return;
