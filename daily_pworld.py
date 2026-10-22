@@ -6,7 +6,45 @@ import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from urllib.parse import urljoin
-@@ -41,6 +42,18 @@
+
+import requests
+from bs4 import BeautifulSoup
+from PIL import Image, ImageEnhance, ImageFilter
+
+
+# =========================================================
+# 設定
+# =========================================================
+
+PAGE_URL = "https://www.p-world.co.jp/hokkaido/playland-happy-t.htm"
+
+TESSERACT = "tesseract"
+
+IMAGE_DIR = "downloaded_images"
+DATA_DIR = "data"
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/154.0.0.0 Safari/537.36"
+    ),
+    "Referer": "https://www.google.com/"
+}
+
+# =========================================================
+# 取得対象画像として判定
+# =========================================================
+KEYWORDS = [
+    "開店",
+    "OPEN",
+    "時差解放"
+]
+
+# 取得対象画像でも除外する文字
+EXCLUDE_KEYWORDS = [
+    "抽選開始",
+    "抽選への参加"
 ]
 
 
@@ -25,8 +63,16 @@ LAYOUT_THRESHOLD = 18
 # =========================================================
 # フォルダ準備
 # =========================================================
-@@ -49,6 +62,121 @@
-os.makedirs(DATA_DIR, exist_ok=True)
+
+os.makedirs(
+    IMAGE_DIR,
+    exist_ok=True
+)
+
+os.makedirs(
+    DATA_DIR,
+    exist_ok=True
+)
 
 
 # =========================================================
@@ -42,10 +88,14 @@ def create_layout_signature(image_path):
     全体的なレイアウトの違いを判定しやすくする。
     """
 
-    img = Image.open(image_path).convert("L")
+    img = Image.open(
+        image_path
+    ).convert("L")
 
     # アスペクト比を保ったまま縮小
-    img.thumbnail(LAYOUT_IMAGE_SIZE)
+    img.thumbnail(
+        LAYOUT_IMAGE_SIZE
+    )
 
     # 64x64のキャンバスを作る
     canvas = Image.new(
@@ -55,11 +105,13 @@ def create_layout_signature(image_path):
     )
 
     x = (
-        LAYOUT_IMAGE_SIZE[0] - img.width
+        LAYOUT_IMAGE_SIZE[0]
+        - img.width
     ) // 2
 
     y = (
-        LAYOUT_IMAGE_SIZE[1] - img.height
+        LAYOUT_IMAGE_SIZE[1]
+        - img.height
     ) // 2
 
     canvas.paste(
@@ -73,9 +125,14 @@ def create_layout_signature(image_path):
     ).enhance(1.5)
 
     # 0～1に変換
-    pixels = list(canvas.getdata())
+    pixels = list(
+        canvas.getdata()
+    )
 
-    average = sum(pixels) / len(pixels)
+    average = (
+        sum(pixels)
+        / len(pixels)
+    )
 
     # 平均値との差を特徴量にする
     signature = [
@@ -99,6 +156,7 @@ def calculate_layout_distance(
     """
 
     if len(signature1) != len(signature2):
+
         return 999
 
     total = 0
@@ -107,10 +165,14 @@ def calculate_layout_distance(
         signature1,
         signature2
     ):
-        total += abs(a - b)
+
+        total += abs(
+            a - b
+        )
 
     return (
-        total / len(signature1)
+        total
+        / len(signature1)
     ) * 100
 
 
@@ -123,7 +185,9 @@ layout_index_file = os.path.join(
     "layout_index.json"
 )
 
-if os.path.exists(layout_index_file):
+if os.path.exists(
+    layout_index_file
+):
 
     try:
 
@@ -147,23 +211,44 @@ else:
 # =========================================================
 # P-WORLDページ取得
 # =========================================================
-@@ -63,7 +191,10 @@
+
+print(
+    "P-WORLDページを取得しています..."
+)
+
+response = requests.get(
+    PAGE_URL,
+    headers=HEADERS,
+    timeout=30
+)
 
 response.raise_for_status()
 
-soup = BeautifulSoup(response.text, "html.parser")
 soup = BeautifulSoup(
     response.text,
     "html.parser"
 )
 
-print("ページ取得成功")
+print(
+    "ページ取得成功"
+)
+
 print()
-@@ -82,31 +213,49 @@
+
+
+# =========================================================
+# P-WORLDの告知画像URLを取得
+# =========================================================
+
+image_urls = []
+
+for img in soup.find_all("img"):
+
+    src = img.get("src")
+
     if not src:
         continue
 
-    image_url = urljoin(PAGE_URL, src)
     image_url = urljoin(
         PAGE_URL,
         src
@@ -174,17 +259,17 @@ print()
         continue
 
     if image_url not in image_urls:
-        image_urls.append(image_url)
 
         image_urls.append(
             image_url
         )
 
-print(f"告知画像を {len(image_urls)} 枚発見しました。")
 
 print(
-    f"告知画像を {len(image_urls)} 枚発見しました。"
+    f"告知画像を "
+    f"{len(image_urls)} 枚発見しました。"
 )
+
 print()
 
 
@@ -192,35 +277,33 @@ print()
 # 今日の日付
 # =========================================================
 
-today = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d")
 today = datetime.now(
     ZoneInfo("Asia/Tokyo")
 ).strftime("%Y-%m-%d")
 
-today_dir = os.path.join(DATA_DIR, today)
 today_dir = os.path.join(
     DATA_DIR,
     today
 )
 
-os.makedirs(today_dir, exist_ok=True)
 os.makedirs(
     today_dir,
     exist_ok=True
 )
 
-print(f"保存先: {today_dir}")
 print(
     f"保存先: {today_dir}"
 )
+
 print()
 
 
-@@ -116,15 +265,23 @@
+# =========================================================
+# 画像取得 → OCR → 判定
+# =========================================================
 
 found = []
 
-for index, image_url in enumerate(image_urls, 1):
 for index, image_url in enumerate(
     image_urls,
     1
@@ -235,29 +318,40 @@ for index, image_url in enumerate(
 
         ext = ".jpg"
 
-    filename = f"{index:02d}{ext}"
     filename = (
         f"{index:02d}{ext}"
     )
 
     downloaded_file = os.path.join(
         IMAGE_DIR,
-@@ -137,7 +294,8 @@
+        filename
+    )
+
+    temp_file = os.path.join(
+        IMAGE_DIR,
+        "_ocr_temp.png"
     )
 
     print(
-        f"[{index}/{len(image_urls)}] {filename}",
         f"[{index}/{len(image_urls)}] "
         f"{filename}",
         end=" "
     )
 
-@@ -155,15 +313,23 @@
+    try:
+
+        # -------------------------------------------------
+        # 画像ダウンロード
+        # -------------------------------------------------
+
+        r = requests.get(
+            image_url,
+            headers=HEADERS,
+            timeout=30
+        )
 
         r.raise_for_status()
 
-        with open(downloaded_file, "wb") as f:
-            f.write(r.content)
         with open(
             downloaded_file,
             "wb"
@@ -272,40 +366,65 @@ for index, image_url in enumerate(
         # OCR用画像作成
         # -------------------------------------------------
 
-        img = Image.open(downloaded_file).convert("L")
         img = Image.open(
             downloaded_file
         ).convert("L")
 
         # 3倍拡大
         img = img.resize(
-@@ -174,12 +340,18 @@
+            (
+                img.width * 3,
+                img.height * 3
+            )
         )
 
         # コントラスト強化
-        img = ImageEnhance.Contrast(img).enhance(2.0)
         img = ImageEnhance.Contrast(
             img
         ).enhance(2.0)
 
         # シャープ化
-        img = img.filter(ImageFilter.SHARPEN)
         img = img.filter(
             ImageFilter.SHARPEN
         )
 
-        img.save(temp_file)
         img.save(
             temp_file
         )
 
 
         # -------------------------------------------------
-@@ -214,12 +386,17 @@
+        # OCR
+        # -------------------------------------------------
+
+        result = subprocess.run(
+            [
+                TESSERACT,
+                temp_file,
+                "stdout",
+                "-l",
+                "jpn+eng",
+                "--psm",
+                "6"
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=15
+        )
+
+        text = result.stdout
+
+
+        # -------------------------------------------------
+        # 除外判定
+        # -------------------------------------------------
+
+        excluded = []
+
         for keyword in EXCLUDE_KEYWORDS:
 
             if keyword in text:
-                excluded.append(keyword)
 
                 excluded.append(
                     keyword
@@ -314,18 +433,23 @@ for index, image_url in enumerate(
         if excluded:
 
             print(
-                f"→ 除外（{', '.join(excluded)}）"
                 f"→ 除外（"
                 f"{', '.join(excluded)}"
                 f"）"
             )
 
             continue
-@@ -234,7 +411,10 @@
+
+
+        # -------------------------------------------------
+        # 対象画像判定
+        # -------------------------------------------------
+
+        matched = []
+
         for keyword in KEYWORDS:
 
             if keyword.lower() in text.lower():
-                matched.append(keyword)
 
                 matched.append(
                     keyword
@@ -333,18 +457,29 @@ for index, image_url in enumerate(
 
 
         if matched:
-@@ -255,29 +435,41 @@
+
+            print(
+                f"★ 対象画像 "
+                f"（{', '.join(matched)}）"
+            )
+
+            # 対象画像として保存
+            destination = os.path.join(
+                today_dir,
+                filename
+            )
+
+            shutil.copy2(
+                downloaded_file,
                 destination
             )
 
-            found.append(filename)
             found.append(
                 filename
             )
 
         else:
 
-            print("→ 該当なし")
             print(
                 "→ 該当なし"
             )
@@ -352,7 +487,6 @@ for index, image_url in enumerate(
 
     except subprocess.TimeoutExpired:
 
-        print("→ OCRタイムアウト")
         print(
             "→ OCRタイムアウト"
         )
@@ -360,7 +494,6 @@ for index, image_url in enumerate(
 
     except Exception as e:
 
-        print(f"→ エラー: {e}")
         print(
             f"→ エラー: {e}"
         )
@@ -369,29 +502,52 @@ for index, image_url in enumerate(
     finally:
 
         # OCR一時ファイル削除
-        if os.path.exists(temp_file):
         if os.path.exists(
             temp_file
         ):
 
-            os.remove(temp_file)
             os.remove(
                 temp_file
             )
 
 
 # =========================================================
-@@ -303,34 +495,62 @@
-        "開店画像は見つかりませんでした。"
+# 結果
+# =========================================================
+
+print()
+
+print(
+    "=" * 60
+)
+
+print(
+    "本日の判定結果"
+)
+
+print(
+    "=" * 60
+)
+
+if found:
+
+    for filename in found:
+
+        print(
+            f"★ {filename}"
+        )
+
+else:
+
+    print(
+        "対象画像は見つかりませんでした。"
     )
 
 
 # =========================================================
 # index.jsonを作成
-import json
 # =========================================================
 
-index_file = os.path.join(DATA_DIR, "index.json")
 index_file = os.path.join(
     DATA_DIR,
     "index.json"
@@ -399,24 +555,20 @@ index_file = os.path.join(
 
 index_data = {}
 
-for date_name in sorted(os.listdir(DATA_DIR)):
 for date_name in sorted(
     os.listdir(DATA_DIR)
 ):
 
-    date_dir = os.path.join(DATA_DIR, date_name)
     date_dir = os.path.join(
         DATA_DIR,
         date_name
     )
 
-    if not os.path.isdir(date_dir):
     if not os.path.isdir(
         date_dir
     ):
         continue
 
-    if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_name):
     if not re.match(
         r"^\d{4}-\d{2}-\d{2}$",
         date_name
@@ -425,27 +577,23 @@ for date_name in sorted(
 
     files = []
 
-    for filename in sorted(os.listdir(date_dir)):
     for filename in sorted(
         os.listdir(date_dir)
     ):
 
         if filename.lower().endswith(
-            (".jpg", ".jpeg", ".png")
             (
                 ".jpg",
                 ".jpeg",
                 ".png"
             )
         ):
-            files.append(filename)
 
             files.append(
                 filename
             )
 
     if files:
-        index_data[date_name] = files
 
         index_data[
             date_name
@@ -454,11 +602,17 @@ for date_name in sorted(
 
 with open(
     index_file,
-@@ -345,9 +565,235 @@
+    "w",
+    encoding="utf-8"
+) as f:
+
+    json.dump(
+        index_data,
+        f,
+        ensure_ascii=False,
         indent=2
     )
 
-print("index.jsonを更新しました。")
 print(
     "index.jsonを更新しました。"
 )
@@ -469,9 +623,18 @@ print(
 # =========================================================
 
 print()
-print("=" * 60)
-print("基本レイアウト判定")
-print("=" * 60)
+
+print(
+    "=" * 60
+)
+
+print(
+    "基本レイアウト判定"
+)
+
+print(
+    "=" * 60
+)
 
 
 # ---------------------------------------------------------
@@ -560,7 +723,10 @@ for image_info in all_images:
     # 既存レイアウトとの比較
     # ---------------------------------------------
 
-    for layout_id, layout_info in layout_groups.items():
+    for (
+        layout_id,
+        layout_info
+    ) in layout_groups.items():
 
         reference_signature = (
             layout_info["signature"]
@@ -646,7 +812,10 @@ for image_info in all_images:
 
 output_layout_data = {}
 
-for layout_id, layout_info in layout_groups.items():
+for (
+    layout_id,
+    layout_info
+) in layout_groups.items():
 
     output_layout_data[
         layout_id
@@ -670,9 +839,11 @@ with open(
 
 
 print()
+
 print(
-    f"layout_index.jsonを更新しました。"
+    "layout_index.jsonを更新しました。"
 )
+
 print(
     f"検出したレイアウト数: "
     f"{len(output_layout_data)}"
@@ -684,12 +855,13 @@ print(
 # =========================================================
 
 print()
-print(f"保存先: {today_dir}")
+
 print(
     f"保存先: {today_dir}"
 )
+
 print()
-print("完了しました！")
+
 print(
     "完了しました！"
 )
