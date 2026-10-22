@@ -1,7 +1,8 @@
 import json
 import re
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import requests
@@ -46,7 +47,7 @@ def scrape_day(session, day):
 
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    today = date.today()
+    today = datetime.now(ZoneInfo('Asia/Tokyo')).date()
     session = requests.Session()
     session.headers.update(HEADERS)
     updated = 0
