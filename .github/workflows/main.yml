@@ -1,9 +1,8 @@
 name: P-WORLD daily collection
 
 on:
-  push:
-    branches:
-      - main
+  # P-WORLD collection and layout detection are handled by daily-collect.yml.
+  # This workflow now only refreshes Min-Revo and Horulog data.
   workflow_dispatch:
   schedule:
     - cron: "0 0 * * *"
@@ -37,10 +36,6 @@ jobs:
         run: |
           playwright install chromium
           playwright install-deps chromium
-
-      - name: Run P-WORLD collector
-        run: |
-          python daily_pworld.py
 
       - name: Run Minrepo collector
         run: |
