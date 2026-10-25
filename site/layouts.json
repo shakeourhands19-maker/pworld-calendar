@@ -313,13 +313,18 @@
   },
   {
     "id": "layout_023",
-    "count": 1,
+    "count": 2,
     "representative": "images/2026-09-26/1791605388855.jpg",
     "images": [
       {
         "date": "2026-09-26",
         "filename": "1791605388855.jpg",
         "url": "images/2026-09-26/1791605388855.jpg"
+      },
+      {
+        "date": "2026-10-24",
+        "filename": "06.jpg",
+        "url": "images/2026-10-24/06.jpg"
       }
     ]
   },
@@ -350,12 +355,12 @@
   {
     "id": "layout_026",
     "count": 1,
-    "representative": "images/2026-10-24/06.jpg",
+    "representative": "images/2026-10-26/06.jpg",
     "images": [
       {
-        "date": "2026-10-24",
+        "date": "2026-10-26",
         "filename": "06.jpg",
-        "url": "images/2026-10-24/06.jpg"
+        "url": "images/2026-10-26/06.jpg"
       }
     ]
   }
