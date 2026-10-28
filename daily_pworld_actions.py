@@ -68,7 +68,7 @@ HARD_EXCLUDE_KEYWORDS = [
 
 LAYOUT_IMAGE_SIZE = (64, 64)
 
-LAYOUT_THRESHOLD = 18
+LAYOUT_THRESHOLD = 14
 
 
 # ============================================================
@@ -106,130 +106,72 @@ os.makedirs(
 
 
 # ============================================================
-# レイアウト署名作成
+# レイアウト署名作成（改善版）
 # ============================================================
 
 def create_layout_signature(image_path):
-
+    """
+    dHashによる大まかな配置比較と、ぼかした縮小画像による
+    全体構成比較を組み合わせる。日付・小さな文字の違いを抑える。
+    """
     try:
+        with Image.open(image_path) as source:
+            image = source.convert("L")
 
-        image = Image.open(
-            image_path
-        ).convert("L")
+        # 文字・細部の影響を弱め、ポスター全体の配置を残す
+        blurred = image.filter(ImageFilter.GaussianBlur(radius=2.0))
 
+        # dHash（17x16画像の隣接画素差を16x16のbit列に）
+        hash_image = blurred.resize((17, 16), Image.Resampling.LANCZOS)
+        hash_pixels = list(hash_image.getdata())
+        dhash = []
+        for y in range(16):
+            row = y * 17
+            for x in range(16):
+                dhash.append(
+                    1 if hash_pixels[row + x] > hash_pixels[row + x + 1] else 0
+                )
 
-        # ----------------------------------------------------
-        # サムネイル化
-        # ----------------------------------------------------
-
-        image.thumbnail(
-            LAYOUT_IMAGE_SIZE
-        )
-
-
-        # ----------------------------------------------------
-        # 64×64の白背景に中央配置
-        # ----------------------------------------------------
-
-        canvas = Image.new(
-            "L",
-            LAYOUT_IMAGE_SIZE,
-            255
-        )
-
-        x = (
-            LAYOUT_IMAGE_SIZE[0]
-            - image.width
-        ) // 2
-
-        y = (
-            LAYOUT_IMAGE_SIZE[1]
-            - image.height
-        ) // 2
-
-        canvas.paste(
-            image,
-            (x, y)
-        )
-
-
-        # ----------------------------------------------------
-        # コントラスト強調
-        # ----------------------------------------------------
-
-        canvas = ImageEnhance.Contrast(
-            canvas
-        ).enhance(1.5)
-
-
-        # ----------------------------------------------------
-        # ピクセル取得
-        # ----------------------------------------------------
-
-        pixels = list(
-            canvas.get_flattened_data()
-        )
-
+        # ぼかした縮小画像を平均値基準で正規化
+        small = blurred.resize((32, 32), Image.Resampling.LANCZOS)
+        pixels = list(small.getdata())
         if not pixels:
             return None
-
-
-        # ----------------------------------------------------
-        # 平均値で正規化
-        # ----------------------------------------------------
-
         average = sum(pixels) / len(pixels)
+        gray = [(pixel - average) / 255.0 for pixel in pixels]
 
-        signature = [
-            round(
-                pixel - average,
-                2
-            )
-            for pixel in pixels
-        ]
-
-        return signature
-
+        return {"dhash": dhash, "gray": gray}
 
     except Exception as e:
-
-        print(
-            f"レイアウト署名作成エラー: "
-            f"{image_path} / {e}"
-        )
-
+        print(f"レイアウト署名作成エラー: {image_path} / {e}")
         return None
 
 
 # ============================================================
-# レイアウト距離
+# レイアウト距離（改善版）
 # ============================================================
 
-def calculate_layout_distance(
-    signature1,
-    signature2
-):
-
-    if (
-        signature1 is None
-        or signature2 is None
-    ):
+def calculate_layout_distance(signature1, signature2):
+    """
+    0に近いほど類似。dHashの構造差70%、ぼかし画像の差30%。
+    """
+    if not signature1 or not signature2:
         return 999999
 
-    if len(signature1) != len(signature2):
+    hash1 = signature1.get("dhash", [])
+    hash2 = signature2.get("dhash", [])
+    gray1 = signature1.get("gray", [])
+    gray2 = signature2.get("gray", [])
+
+    if not hash1 or len(hash1) != len(hash2) or len(gray1) != len(gray2):
         return 999999
 
+    hash_percent = sum(a != b for a, b in zip(hash1, hash2)) / len(hash1) * 100.0
+    gray_percent = (
+        sum(abs(a - b) for a, b in zip(gray1, gray2)) / len(gray1) * 100.0
+    )
 
-    difference = sum(
-        abs(a - b)
-        for a, b in zip(
-            signature1,
-            signature2
-        )
-    ) / len(signature1)
-
-
-    return difference
+    return (hash_percent * 0.7) + (gray_percent * 0.3)
 
 
 # ============================================================
