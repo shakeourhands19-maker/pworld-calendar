@@ -863,4 +863,67 @@ print()
 
 print(
     "完了しました！"
-)
+)# =========================================================
+# レイアウト特徴量作成（改善版）
+# =========================================================
+
+def create_layout_signature(image_path):
+    """
+    日付・文字の差に過剰反応しないよう、2種類の特徴量を作成する。
+    - dHash: 大まかな明暗の配置・構造を比較
+    - ぼかした縮小画像: 細かい文字を弱めてポスター全体の構成を比較
+    """
+    with Image.open(image_path) as source:
+        image = source.convert("L")
+
+    # 低周波成分を使い、文字や細部の差を軽減する
+    blurred = image.filter(ImageFilter.GaussianBlur(radius=2.0))
+
+    # dHash（17x16 -> 16x16の明暗差）
+    hash_image = blurred.resize((17, 16), Image.Resampling.LANCZOS)
+    hash_pixels = list(hash_image.getdata())
+    dhash = []
+    for y in range(16):
+        row = y * 17
+        for x in range(16):
+            dhash.append(1 if hash_pixels[row + x] > hash_pixels[row + x + 1] else 0)
+
+    # 比較用の縮小画像は平均値を引いて明るさ差を正規化
+    small = blurred.resize((32, 32), Image.Resampling.LANCZOS)
+    pixels = list(small.getdata())
+    average = sum(pixels) / len(pixels)
+    normalized = [(p - average) / 255.0 for p in pixels]
+
+    return {"dhash": dhash, "gray": normalized}
+
+
+# =========================================================
+# レイアウト距離計算（改善版）
+# =========================================================
+
+def calculate_layout_distance(signature1, signature2):
+    """
+    0に近いほど類似。
+    dHashの構造類似と、ぼかした画像の画素差を組み合わせる。
+    """
+    if not signature1 or not signature2:
+        return 999
+
+    hash1 = signature1.get("dhash", [])
+    hash2 = signature2.get("dhash", [])
+    gray1 = signature1.get("gray", [])
+    gray2 = signature2.get("gray", [])
+
+    if not hash1 or len(hash1) != len(hash2) or len(gray1) != len(gray2):
+        return 999
+
+    hash_distance = sum(a != b for a, b in zip(hash1, hash2))
+    hash_percent = hash_distance / len(hash1) * 100.0
+
+    gray_distance = sum(abs(a - b) for a, b in zip(gray1, gray2)) / len(gray1) * 100.0
+
+    # dHashに重みを置き、細かな文字や日付の変化による影響を抑える
+    return (hash_percent * 0.7) + (gray_distance * 0.3)
+
+
+
