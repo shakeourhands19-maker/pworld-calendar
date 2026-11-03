@@ -1325,6 +1325,31 @@ for filename, full_path in today_images:
 
     else:
 
+        # ----------------------------------------------------
+        # 判定診断: 新規レイアウト扱いとなった画像について、
+        # 既存レイアウトとの距離を近い順に表示する。
+        # 次回以降の閾値・比較方式の調整に使用する。
+        # ----------------------------------------------------
+        candidate_distances = []
+        for layout in layout_groups:
+            distance = calculate_layout_distance(
+                signature,
+                layout["signature"]
+            )
+            candidate_distances.append((distance, layout["id"]))
+
+        candidate_distances.sort(key=lambda item: item[0])
+        print(
+            f"判定診断: {today}/{filename} は既存レイアウトに不一致 "
+            f"(閾値 {LAYOUT_THRESHOLD})"
+        )
+        if candidate_distances:
+            print("  既存レイアウトとの距離（近い順・上位5件）:")
+            for distance, layout_id in candidate_distances[:5]:
+                print(f"    {layout_id}: {distance:.1f}")
+        else:
+            print("  比較可能な既存レイアウトがありません。")
+
         max_layout_number += 1
 
 
