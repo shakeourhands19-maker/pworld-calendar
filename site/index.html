@@ -201,7 +201,13 @@ function directIslandSave(data){const date=directIslandCurrentDate(),profiles=di
 function directIslandChangeDate(){const date=directIslandCurrentDate();directIslandEnsureProfile(date);directIslandMachineDate='';directIslandMachineByNumber={};renderDirectIsland();document.getElementById('directIslandStatus').textContent=date+'の島図を表示しています。変更はこの日付にだけ保存されます。'}
 let directIslandMode='edit';
 let directIslandMachineByNumber={},directIslandMachineDate='';
-function directIslandManualMachineNames(){const p=directIslandEnsureProfile();return p.names||{}}
+function directIslandManualMachineNames(){
+  const p=directIslandEnsureProfile();
+  let shared={};
+  try{shared=JSON.parse(localStorage.getItem('pworldDirectMachineNames')||'{}')}catch(e){}
+  // Keep machine names entered on another date visible as well; date-specific entries take priority.
+  return Object.assign({},shared,p.names||{});
+}
 function directIslandSaveManualMachineNames(data){const date=directIslandCurrentDate(),profiles=directIslandProfiles(),p=directIslandEnsureProfile(date);p.names=data;profiles[date]=p;localStorage.setItem('pworldDirectIslandProfiles',JSON.stringify(profiles));localStorage.setItem('pworldDirectMachineNames',JSON.stringify(data))}
 function directIslandImportBulkNames(){
  const input=document.getElementById('directIslandBulkNames').value;
