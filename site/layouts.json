@@ -447,13 +447,18 @@
   },
   {
     "id": "layout_032",
-    "count": 1,
+    "count": 2,
     "representative": "images/2026-11-11/06.jpg",
     "images": [
       {
         "date": "2026-11-11",
         "filename": "06.jpg",
         "url": "images/2026-11-11/06.jpg"
+      },
+      {
+        "date": "2026-11-20",
+        "filename": "06.jpg",
+        "url": "images/2026-11-20/06.jpg"
       }
     ]
   },
